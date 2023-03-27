@@ -3,23 +3,16 @@ package world
 import (
 	"image/color"
 
+	"github.com/Lama06/Herder-Games/option"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
-type BackgroundRendererComponent struct {
+type BackgroundComponent struct {
 	Color color.Color
 }
 
-type RendererComponent struct {
+type ImageComponent struct {
 	Layer int
-}
-
-type RectRendererComponent struct {
-	Width, Height int
-	Color         color.Color
-}
-
-type ImageRendererComponent struct {
 	Image *ebiten.Image
 }
 
@@ -27,11 +20,15 @@ type RectColliderComponent struct {
 	Width, Height int
 }
 
+type ImageBoundsColliderComponent struct{}
+
 type CollisionsComponent struct {
 	Collisions []*Entity
 }
 
-type PreventCollisionsComponent struct{}
+type PreventCollisionsComponent struct {
+	LastLegalPosition option.Option[Position]
+}
 
 type KeyboardControllerComponent struct {
 	Speed int

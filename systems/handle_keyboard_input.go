@@ -1,30 +1,20 @@
-package keyboard_controller
+package systems
 
 import (
 	"errors"
-	"fmt"
 
-	"github.com/Lama06/Herder-Games/system"
 	"github.com/Lama06/Herder-Games/world"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
-type offset struct{ x, y int }
-
-var keyOffsets = map[ebiten.Key]offset{
+var keyOffsets = map[ebiten.Key]struct{ x, y int }{
 	ebiten.KeyW: {x: 0, y: -1},
 	ebiten.KeyA: {x: -1, y: 0},
 	ebiten.KeyS: {x: 0, y: 1},
 	ebiten.KeyD: {x: 1, y: 0},
 }
 
-type keyboardControllerSystem struct{}
-
-func New() system.System {
-	return keyboardControllerSystem{}
-}
-
-func (k keyboardControllerSystem) Update(w *world.World) error {
+func handleKeyboardInput(w *world.World) error {
 	var errs []error
 	for entity := range w.Entities {
 		if !entity.KeyboardController.Present {
@@ -33,7 +23,7 @@ func (k keyboardControllerSystem) Update(w *world.World) error {
 		keyboardController := entity.KeyboardController.Data
 
 		if !entity.Position.Present {
-			errs = append(errs, fmt.Errorf("entity has keyboard controller component but no position component: %v", entity))
+			errs = append(errs, newRequireComponentError(entity, "position"))
 			continue
 		}
 		position := &entity.Position.Data
@@ -45,8 +35,4 @@ func (k keyboardControllerSystem) Update(w *world.World) error {
 		}
 	}
 	return errors.Join(errs...)
-}
-
-func (k keyboardControllerSystem) Draw(w *world.World, screen *ebiten.Image) error {
-	return nil
 }

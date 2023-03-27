@@ -2,31 +2,20 @@ package world
 
 import "github.com/Lama06/Herder-Games/graphics"
 
-type WorldPosition interface {
-	Coordinates() WorldCoordinates
+type Position interface {
+	Coordinates() Coordinates
 }
 
-func WorldPositionToScreenPosition(world *World, position WorldPosition) graphics.ScreenPosition {
-	worldCoordinates := position.Coordinates()
-	playerWorldCoordinates := world.Player.Position.Data.Coordinates()
-	playerXOffset := worldCoordinates.WorldX - playerWorldCoordinates.WorldX
-	playerYOffset := worldCoordinates.WorldY - playerWorldCoordinates.WorldY
-	return graphics.ScreenPosition{
-		ScreenX: graphics.PlayerX + playerXOffset,
-		ScreenY: graphics.PlayerY + playerYOffset,
-	}
-}
-
-type WorldCoordinates struct {
+type Coordinates struct {
 	WorldX, WorldY int
 }
 
-func (w WorldCoordinates) Coordinates() WorldCoordinates {
+func (w Coordinates) Coordinates() Coordinates {
 	return w
 }
 
-func (w WorldCoordinates) Add(x, y int) WorldCoordinates {
-	return WorldCoordinates{
+func (w Coordinates) Add(x, y int) Coordinates {
+	return Coordinates{
 		WorldX: w.WorldX + x,
 		WorldY: w.WorldY + y,
 	}
@@ -36,8 +25,8 @@ type TilePosition struct {
 	TileX, TileY int
 }
 
-func (t TilePosition) Coordinates() WorldCoordinates {
-	return WorldCoordinates{
+func (t TilePosition) Coordinates() Coordinates {
+	return Coordinates{
 		WorldX: t.TileX * graphics.TileSize,
 		WorldY: t.TileY * graphics.TileSize,
 	}
