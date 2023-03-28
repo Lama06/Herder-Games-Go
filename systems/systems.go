@@ -32,6 +32,15 @@ func Update(w *world.World) error {
 		errs = append(errs, fmt.Errorf("failed to run handle keyboard input system: %w", err))
 	}
 
+	addRectImages(w)
+
+	err = addImageBoundsColliders(w)
+	if err != nil {
+		errs = append(errs, fmt.Errorf("failed to run add image bounds colliders system: %w", err))
+	}
+
+	addCollisionsComponents(w)
+
 	err = checkCollisions(w)
 	if err != nil {
 		errs = append(errs, fmt.Errorf("failed to run check collisions system: %w", err))

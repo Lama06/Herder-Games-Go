@@ -16,6 +16,12 @@ type ImageComponent struct {
 	Image *ebiten.Image
 }
 
+type RectComponent struct {
+	Layer         int
+	Width, Height int
+	Color         color.Color
+}
+
 type RectColliderComponent struct {
 	Width, Height int
 }

@@ -91,25 +91,20 @@ func addBoden(w *world.World) {
 }
 
 func main() {
-	playerImg := ebiten.NewImage(20, 20)
-	playerImg.Fill(colornames.Red)
-
 	player := &world.Entity{
 		Position: option.Some[world.Position](world.TilePosition{
 			TileX: 15,
 			TileY: 15,
 		}),
-		Image: option.Some(world.ImageComponent{
-			Image: playerImg,
-			Layer: PlayerLayer,
-		}),
-		KeyboardController: option.Some(world.KeyboardControllerComponent{Speed: 2}),
-		RectCollider: option.Some(world.RectColliderComponent{
+		Rect: option.Some(world.RectComponent{
 			Width:  20,
 			Height: 20,
+			Color:  colornames.Red,
+			Layer:  PlayerLayer,
 		}),
-		Collissions:       option.Some(world.CollisionsComponent{}),
-		PreventCollisions: option.Some(world.PreventCollisionsComponent{}),
+		KeyboardController:  option.Some(world.KeyboardControllerComponent{Speed: 2}),
+		ImageBoundsCollider: option.Some(world.ImageBoundsColliderComponent{}),
+		PreventCollisions:   option.Some(world.PreventCollisionsComponent{}),
 	}
 
 	world := &world.World{

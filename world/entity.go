@@ -6,6 +6,7 @@ type Entity struct {
 	Position            option.Option[Position]
 	Background          option.Option[BackgroundComponent]
 	Image               option.Option[ImageComponent]
+	Rect                option.Option[RectComponent]
 	KeyboardController  option.Option[KeyboardControllerComponent]
 	RectCollider        option.Option[RectColliderComponent]
 	ImageBoundsCollider option.Option[ImageBoundsColliderComponent]

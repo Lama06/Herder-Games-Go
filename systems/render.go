@@ -5,9 +5,40 @@ import (
 	"sort"
 
 	"github.com/Lama06/Herder-Games/graphics"
+	"github.com/Lama06/Herder-Games/option"
 	"github.com/Lama06/Herder-Games/world"
 	"github.com/hajimehoshi/ebiten/v2"
 )
+
+func drawBackground(w *world.World, screen *ebiten.Image) {
+	for entity := range w.Entities {
+		if !entity.Background.Present {
+			continue
+		}
+		background := entity.Background.Data
+
+		screen.Fill(background.Color)
+	}
+}
+
+func addRectImages(w *world.World) {
+	for entity := range w.Entities {
+		if !entity.Rect.Present {
+			continue
+		}
+		rect := entity.Rect.Data
+
+		if !entity.Image.Present {
+			img := ebiten.NewImage(rect.Width, rect.Height)
+			img.Fill(rect.Color)
+
+			entity.Image = option.Some(world.ImageComponent{
+				Image: img,
+				Layer: rect.Layer,
+			})
+		}
+	}
+}
 
 func worldPositionToScreenPosition(w *world.World, position world.Position) (x, y int) {
 	worldCoordinates := position.Coordinates()
@@ -59,9 +90,6 @@ func drawImages(w *world.World, screen *ebiten.Image) error {
 			screenPositionX, screenPositionY := worldPositionToScreenPosition(w, worldPosition)
 
 			var drawOptions ebiten.DrawImageOptions
-			if entity == w.Player {
-				println(screenPositionX)
-			}
 			drawOptions.GeoM.Translate(float64(screenPositionX), float64(screenPositionY))
 			screen.DrawImage(image.Image, &drawOptions)
 		}
