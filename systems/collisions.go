@@ -10,21 +10,21 @@ import (
 func addImageBoundsColliders(w *world.World) error {
 	var errs []error
 	for entity := range w.Entities {
-		if !entity.ImageBoundsCollider.Present {
+		if !entity.ImageBoundsColliderComponent.Present {
 			continue
 		}
 
-		if !entity.Image.Present {
+		if !entity.ImageComponent.Present {
 			errs = append(errs, newRequireComponentError(entity, "image"))
 			continue
 		}
-		image := entity.Image.Data
+		imageComponent := entity.ImageComponent.Data
 
-		imageWidth := image.Image.Bounds().Dx()
-		imageHeight := image.Image.Bounds().Dy()
+		imageWidth := imageComponent.Image.Bounds().Dx()
+		imageHeight := imageComponent.Image.Bounds().Dy()
 
-		if !entity.RectCollider.Present {
-			entity.RectCollider = option.Some(world.RectColliderComponent{
+		if !entity.RectColliderComponent.Present {
+			entity.RectColliderComponent = option.Some(world.RectColliderComponent{
 				Width:  imageWidth,
 				Height: imageHeight,
 			})
@@ -33,55 +33,42 @@ func addImageBoundsColliders(w *world.World) error {
 	return errors.Join(errs...)
 }
 
-func addCollisionsComponents(w *world.World) {
-	for entity := range w.Entities {
-		if !entity.PreventCollisions.Present {
-			continue
-		}
-
-		entity.Collissions = option.Some(world.CollisionsComponent{})
+func getCollidingEntities(entity *world.Entity, w *world.World) ([]*world.Entity, error) {
+	entityAabb, err := aabbFromEntity(entity)
+	if err != nil {
+		return nil, err
 	}
-}
 
-func checkCollisions(w *world.World) error {
-	var errs []error
-	for first := range w.Entities {
-		if !first.Collissions.Present {
+	var collisions []*world.Entity
+	for other := range w.Entities {
+		if entity == other {
 			continue
 		}
-		firstCollisions := &first.Collissions.Data
 
-		firstAabb, err := aabbFromEntity(first)
+		if entity.Level != other.Level {
+			continue
+		}
+
+		otherAabb, err := aabbFromEntity(other)
 		if err != nil {
-			errs = append(errs, err)
+			continue
 		}
 
-		firstCollisions.Collisions = nil
-		for second := range w.Entities {
-			if first == second {
-				continue
-			}
-
-			secondAabb, err := aabbFromEntity(second)
-			if err != nil {
-				continue
-			}
-
-			if firstAabb.collidesWith(secondAabb) {
-				firstCollisions.Collisions = append(firstCollisions.Collisions, second)
-			}
+		if entityAabb.collidesWith(otherAabb) {
+			collisions = append(collisions, other)
 		}
 	}
-	return errors.Join(errs...)
+	return collisions, nil
+
 }
 
 func preventCollisions(w *world.World) error {
 	var errs []error
 	for entity := range w.Entities {
-		if !entity.PreventCollisions.Present {
+		if !entity.PreventCollisionsComponent.Present {
 			continue
 		}
-		preventCollisions := &entity.PreventCollisions.Data
+		preventCollisionsComponent := &entity.PreventCollisionsComponent.Data
 
 		if !entity.Position.Present {
 			errs = append(errs, newRequireComponentError(entity, "position"))
@@ -89,20 +76,27 @@ func preventCollisions(w *world.World) error {
 		}
 		position := &entity.Position.Data
 
-		if !entity.Collissions.Present {
-			errs = append(errs, newRequireComponentError(entity, "collisions"))
+		collisions, err := getCollidingEntities(entity, w)
+		if err != nil {
+			errs = append(errs, err)
 			continue
 		}
-		collisions := entity.Collissions.Data
 
-		if len(collisions.Collisions) != 0 {
-			if !preventCollisions.LastLegalPosition.Present {
+		if len(collisions) != 0 {
+			if !preventCollisionsComponent.LastLegalPosition.Present {
 				continue
 			}
-			lastLegalPosition := preventCollisions.LastLegalPosition.Data
-			*position = lastLegalPosition
+			lastLegalPosition := preventCollisionsComponent.LastLegalPosition.Data
+			if lastLegalPosition.Level != entity.Level {
+				continue
+			}
+
+			*position = lastLegalPosition.Position
 		} else {
-			preventCollisions.LastLegalPosition = option.Some(*position)
+			preventCollisionsComponent.LastLegalPosition = option.Some(world.Position{
+				Level:    entity.Level,
+				Position: *position,
+			})
 		}
 	}
 	return errors.Join(errs...)

@@ -28,14 +28,14 @@ type RectColliderComponent struct {
 
 type ImageBoundsColliderComponent struct{}
 
-type CollisionsComponent struct {
-	Collisions []*Entity
-}
-
 type PreventCollisionsComponent struct {
 	LastLegalPosition option.Option[Position]
 }
 
 type KeyboardControllerComponent struct {
 	Speed int
+}
+
+type PortalComponent struct {
+	Destination Position
 }

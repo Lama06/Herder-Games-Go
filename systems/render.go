@@ -12,50 +12,54 @@ import (
 
 func drawBackground(w *world.World, screen *ebiten.Image) {
 	for entity := range w.Entities {
-		if !entity.Background.Present {
+		if !entity.BackgroundComponent.Present {
 			continue
 		}
-		background := entity.Background.Data
+		backgroundComponent := entity.BackgroundComponent.Data
 
-		screen.Fill(background.Color)
+		if entity.Level != w.Player.Level {
+			continue
+		}
+
+		screen.Fill(backgroundComponent.Color)
 	}
 }
 
 func addRectImages(w *world.World) {
 	for entity := range w.Entities {
-		if !entity.Rect.Present {
+		if !entity.RectComponent.Present {
 			continue
 		}
-		rect := entity.Rect.Data
+		rectComponent := entity.RectComponent.Data
 
-		if !entity.Image.Present {
-			img := ebiten.NewImage(rect.Width, rect.Height)
-			img.Fill(rect.Color)
+		if !entity.ImageComponent.Present {
+			image := ebiten.NewImage(rectComponent.Width, rectComponent.Height)
+			image.Fill(rectComponent.Color)
 
-			entity.Image = option.Some(world.ImageComponent{
-				Image: img,
-				Layer: rect.Layer,
+			entity.ImageComponent = option.Some(world.ImageComponent{
+				Image: image,
+				Layer: rectComponent.Layer,
 			})
 		}
 	}
 }
 
-func worldPositionToScreenPosition(w *world.World, position world.Position) (x, y int) {
-	worldCoordinates := position.Coordinates()
-	playerWorldCoordinates := w.Player.Position.Data.Coordinates()
-	playerXOffset := worldCoordinates.WorldX - playerWorldCoordinates.WorldX
-	playerYOffset := worldCoordinates.WorldY - playerWorldCoordinates.WorldY
+func worldPositionToScreenPosition(w *world.World, position world.Coordinates) (x, y int) {
+	coordinates := position.Coordinates()
+	playerCoordinates := w.Player.Position.Data.Coordinates()
+	playerXOffset := coordinates.WorldX - playerCoordinates.WorldX
+	playerYOffset := coordinates.WorldY - playerCoordinates.WorldY
 	return graphics.PlayerX + playerXOffset, graphics.PlayerY + playerYOffset
 }
 
-func findAllLayers(w *world.World) []int {
+func findAllImageLayers(w *world.World) []int {
 	layersSet := make(map[int]struct{})
 	for entity := range w.Entities {
-		if !entity.Image.Present {
+		if !entity.ImageComponent.Present {
 			continue
 		}
-		image := entity.Image.Data
-		layersSet[image.Layer] = struct{}{}
+		imageComponent := entity.ImageComponent.Data
+		layersSet[imageComponent.Layer] = struct{}{}
 	}
 
 	layers := make([]int, 0, len(layersSet))
@@ -70,28 +74,30 @@ func findAllLayers(w *world.World) []int {
 
 func drawImages(w *world.World, screen *ebiten.Image) error {
 	var errs []error
-	for _, layer := range findAllLayers(w) {
+	for _, layer := range findAllImageLayers(w) {
 		for entity := range w.Entities {
-			if !entity.Image.Present {
+			if entity.Level != w.Player.Level {
 				continue
 			}
-			image := entity.Image.Data
+
+			if !entity.ImageComponent.Present {
+				continue
+			}
+			imageComponent := entity.ImageComponent.Data
+			if imageComponent.Layer != layer {
+				continue
+			}
 
 			if !entity.Position.Present {
 				errs = append(errs, newRequireComponentError(entity, "position"))
 				continue
 			}
-			worldPosition := entity.Position.Data
-
-			if image.Layer != layer {
-				continue
-			}
-
-			screenPositionX, screenPositionY := worldPositionToScreenPosition(w, worldPosition)
+			position := entity.Position.Data
+			screenPositionX, screenPositionY := worldPositionToScreenPosition(w, position)
 
 			var drawOptions ebiten.DrawImageOptions
 			drawOptions.GeoM.Translate(float64(screenPositionX), float64(screenPositionY))
-			screen.DrawImage(image.Image, &drawOptions)
+			screen.DrawImage(imageComponent.Image, &drawOptions)
 		}
 	}
 	return errors.Join(errs...)

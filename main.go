@@ -42,16 +42,29 @@ const (
 	PlayerLayer
 )
 
-func addBoden(w *world.World) {
+func addBoden(w *world.World, level world.Level) {
+	background := &world.Entity{
+		Level: level,
+		BackgroundComponent: option.Some(world.BackgroundComponent{
+			Color: colornames.White,
+		}),
+	}
+	w.Entities[background] = struct{}{}
+
 	for x := 0; x < 30; x++ {
 		for y := 0; y < 30; y++ {
+			if (x >= 13 && x <= 17) && (y >= 13 && y <= 17) {
+				continue
+			}
+
 			if x == 0 || x == 29 || y == 0 || y == 29 {
 				border := &world.Entity{
-					Position: option.Some[world.Position](world.TilePosition{
+					Level: level,
+					Position: option.Some[world.Coordinates](world.TileCoordinates{
 						TileX: x,
 						TileY: y,
 					}),
-					RectCollider: option.Some(world.RectColliderComponent{
+					RectColliderComponent: option.Some(world.RectColliderComponent{
 						Width:  graphics.TileSize,
 						Height: graphics.TileSize,
 					}),
@@ -61,28 +74,61 @@ func addBoden(w *world.World) {
 			}
 
 			boden := &world.Entity{
-				Position: option.Some[world.Position](world.TilePosition{
+				Level: level,
+				Position: option.Some[world.Coordinates](world.TileCoordinates{
 					TileX: x,
 					TileY: y,
 				}),
-				Image: option.Some(world.ImageComponent{
+				ImageComponent: option.Some(world.ImageComponent{
 					Layer: BodenLayer,
 					Image: ebiten.NewImageFromImage(assets.BodenImg),
 				}),
 			}
 			w.Entities[boden] = struct{}{}
 
-			if rand.Float64() <= 0.03 {
+			if rand.Float64() <= 0.02 {
 				tisch := &world.Entity{
-					Position: option.Some[world.Position](world.TilePosition{
+					Level: level,
+					Position: option.Some[world.Coordinates](world.TileCoordinates{
 						TileX: x,
 						TileY: y,
 					}),
-					Image: option.Some(world.ImageComponent{
+					RectComponent: option.Some(world.RectComponent{
+						Width:  20,
+						Height: 20,
+						Color:  colornames.Red,
+						Layer:  PlayerLayer,
+					}),
+					ImageBoundsColliderComponent: option.Some(world.ImageBoundsColliderComponent{}),
+				}
+				w.Entities[tisch] = struct{}{}
+			}
+
+			if rand.Float64() <= 0.01 {
+				destinationLevel := world.Level(1)
+				if level == 1 {
+					destinationLevel = 0
+				}
+				tisch := &world.Entity{
+					Level: level,
+					Position: option.Some[world.Coordinates](world.TileCoordinates{
+						TileX: x,
+						TileY: y,
+					}),
+					ImageComponent: option.Some(world.ImageComponent{
 						Image: ebiten.NewImageFromImage(assets.TischImg),
 						Layer: TischLayer,
 					}),
-					ImageBoundsCollider: option.Some(world.ImageBoundsColliderComponent{}),
+					ImageBoundsColliderComponent: option.Some(world.ImageBoundsColliderComponent{}),
+					PortalComponent: option.Some(world.PortalComponent{
+						Destination: world.Position{
+							Level: destinationLevel,
+							Position: world.TileCoordinates{
+								TileX: 15,
+								TileY: 15,
+							},
+						},
+					}),
 				}
 				w.Entities[tisch] = struct{}{}
 			}
@@ -92,34 +138,30 @@ func addBoden(w *world.World) {
 
 func main() {
 	player := &world.Entity{
-		Position: option.Some[world.Position](world.TilePosition{
+		Position: option.Some[world.Coordinates](world.TileCoordinates{
 			TileX: 15,
 			TileY: 15,
 		}),
-		Rect: option.Some(world.RectComponent{
+		RectComponent: option.Some(world.RectComponent{
 			Width:  20,
 			Height: 20,
 			Color:  colornames.Red,
 			Layer:  PlayerLayer,
 		}),
-		KeyboardController:  option.Some(world.KeyboardControllerComponent{Speed: 2}),
-		ImageBoundsCollider: option.Some(world.ImageBoundsColliderComponent{}),
-		PreventCollisions:   option.Some(world.PreventCollisionsComponent{}),
+		KeyboardControllerComponent:  option.Some(world.KeyboardControllerComponent{Speed: 2}),
+		ImageBoundsColliderComponent: option.Some(world.ImageBoundsColliderComponent{}),
+		PreventCollisionsComponent:   option.Some(world.PreventCollisionsComponent{}),
 	}
 
 	world := &world.World{
 		Player: player,
 		Entities: map[*world.Entity]struct{}{
 			player: {},
-			{
-				Background: option.Some(world.BackgroundComponent{
-					Color: colornames.White,
-				}),
-			}: {},
 		},
 	}
 
-	addBoden(world)
+	addBoden(world, 0)
+	addBoden(world, 1)
 
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 	ebiten.RunGame(&Game{

@@ -12,16 +12,16 @@ func aabbFromEntity(entity *world.Entity) (aabb, error) {
 	}
 	position := entity.Position.Data.Coordinates()
 
-	if !entity.RectCollider.Present {
+	if !entity.RectColliderComponent.Present {
 		return aabb{}, newRequireComponentError(entity, "rect collider")
 	}
-	rectCollider := entity.RectCollider.Data
+	rectColliderComponent := entity.RectColliderComponent.Data
 
 	return aabb{
 		x:      position.WorldX,
 		y:      position.WorldY,
-		width:  rectCollider.Width,
-		height: rectCollider.Height,
+		width:  rectColliderComponent.Width,
+		height: rectColliderComponent.Height,
 	}, nil
 
 }

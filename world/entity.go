@@ -3,13 +3,19 @@ package world
 import "github.com/Lama06/Herder-Games/option"
 
 type Entity struct {
-	Position            option.Option[Position]
-	Background          option.Option[BackgroundComponent]
-	Image               option.Option[ImageComponent]
-	Rect                option.Option[RectComponent]
-	KeyboardController  option.Option[KeyboardControllerComponent]
-	RectCollider        option.Option[RectColliderComponent]
-	ImageBoundsCollider option.Option[ImageBoundsColliderComponent]
-	Collissions         option.Option[CollisionsComponent]
-	PreventCollisions   option.Option[PreventCollisionsComponent]
+	Level    Level
+	Position option.Option[Coordinates]
+
+	KeyboardControllerComponent option.Option[KeyboardControllerComponent]
+
+	BackgroundComponent option.Option[BackgroundComponent]
+	ImageComponent      option.Option[ImageComponent]
+	RectComponent       option.Option[RectComponent]
+
+	RectColliderComponent        option.Option[RectColliderComponent]
+	ImageBoundsColliderComponent option.Option[ImageBoundsColliderComponent]
+
+	PreventCollisionsComponent option.Option[PreventCollisionsComponent]
+
+	PortalComponent option.Option[PortalComponent]
 }

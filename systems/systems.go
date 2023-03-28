@@ -39,11 +39,9 @@ func Update(w *world.World) error {
 		errs = append(errs, fmt.Errorf("failed to run add image bounds colliders system: %w", err))
 	}
 
-	addCollisionsComponents(w)
-
-	err = checkCollisions(w)
+	err = teleportEntitiesTouchingPortal(w)
 	if err != nil {
-		errs = append(errs, fmt.Errorf("failed to run check collisions system: %w", err))
+		errs = append(errs, fmt.Errorf("failed to run teleport entities touching portal system: %w", err))
 	}
 
 	err = preventCollisions(w)

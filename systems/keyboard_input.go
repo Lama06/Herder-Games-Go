@@ -17,10 +17,10 @@ var keyOffsets = map[ebiten.Key]struct{ x, y int }{
 func handleKeyboardInput(w *world.World) error {
 	var errs []error
 	for entity := range w.Entities {
-		if !entity.KeyboardController.Present {
+		if !entity.KeyboardControllerComponent.Present {
 			continue
 		}
-		keyboardController := entity.KeyboardController.Data
+		keyboardControllerComponent := entity.KeyboardControllerComponent.Data
 
 		if !entity.Position.Present {
 			errs = append(errs, newRequireComponentError(entity, "position"))
@@ -30,7 +30,7 @@ func handleKeyboardInput(w *world.World) error {
 
 		for key, offset := range keyOffsets {
 			if ebiten.IsKeyPressed(key) {
-				*position = (*position).Coordinates().Add(offset.x*keyboardController.Speed, offset.y*keyboardController.Speed)
+				*position = (*position).Coordinates().Add(offset.x*keyboardControllerComponent.Speed, offset.y*keyboardControllerComponent.Speed)
 			}
 		}
 	}
