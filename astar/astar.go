@@ -49,7 +49,7 @@ func FindPath[Node comparable](options Options[Node]) Path[Node] {
 	for {
 		currentNode, ok := nodes.nextNode()
 		if !ok {
-			return nil
+			return nil // Kein Path gefunden
 		}
 
 		if currentNode == options.End {
@@ -69,9 +69,9 @@ func FindPath[Node comparable](options Options[Node]) Path[Node] {
 		currentNodeData.open = false
 
 		for _, neighbour := range options.NeighboursFunc(currentNode) {
-			neighbourNodeData, neighbourExists := nodes[neighbour.Node]
+			neighbourNodeData, neighbourNodeExists := nodes[neighbour.Node]
 
-			if !neighbourExists {
+			if !neighbourNodeExists {
 				nodes[neighbour.Node] = nodeData[Node]{
 					open:          true,
 					parent:        option.Some(currentNode),

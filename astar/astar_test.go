@@ -112,7 +112,7 @@ func TestFindImpossiblePath(t *testing.T) {
 	}
 }
 
-func TestFindPathAroundBlockedPositions(t *testing.T) {
+func TestFindPathAroundBlockedPositions1(t *testing.T) {
 	blockedPositions := map[position]struct{}{
 		{x: -1, y: 4}: {},
 		{x: 0, y: 4}:  {},
@@ -146,6 +146,50 @@ func TestFindPathAroundBlockedPositions(t *testing.T) {
 		{x: -2, y: 4},
 		{x: -1, y: 5},
 		{x: 0, y: 6},
+	}
+
+	if !path.Equals(expected) {
+		t.FailNow()
+	}
+}
+
+func TestFindPathAroundBlockedPositions2(t *testing.T) {
+	blockedPositions := map[position]struct{}{
+		{x: -1, y: 0}: {},
+		{x: -1, y: 1}: {},
+		{x: 0, y: 1}:  {},
+		{x: 1, y: 1}:  {},
+		{x: 2, y: 1}:  {},
+		{x: 3, y: 1}:  {},
+		{x: 4, y: 1}:  {},
+	}
+
+	path := astar.FindPath(astar.Options[position]{
+		Start: position{x: 4, y: 2},
+		End:   position{x: 0, y: 0},
+		NeighboursFunc: func(p position) []astar.Neighbour[position] {
+			neighbours := p.neighbours()
+			neighboursExceptBlocked := make([]astar.Neighbour[position], 0, len(neighbours))
+			for _, neighbour := range neighbours {
+				if _, blocked := blockedPositions[p]; blocked {
+					continue
+				}
+
+				neighboursExceptBlocked = append(neighboursExceptBlocked, neighbour)
+			}
+			return neighboursExceptBlocked
+		},
+		EstimateCostFunc: position.estimateCostTo,
+	})
+
+	expected := astar.Path[position]{
+		{x: 4, y: 2},
+		{x: 5, y: 1},
+		{x: 4, y: 0},
+		{x: 3, y: 0},
+		{x: 2, y: 0},
+		{x: 1, y: 0},
+		{x: 0, y: 0},
 	}
 
 	if !path.Equals(expected) {
