@@ -25,11 +25,11 @@ func teleportEntitiesTouchingPortal(w *world.World) error {
 				continue
 			}
 
-			if !collision.Position.Present {
+			if !collision.Coordinate.Present {
 				continue
 			}
 			collision.Level = portalComponent.Destination.Level
-			collision.Position.Data = portalComponent.Destination.Position
+			collision.Coordinate.Data = portalComponent.Destination.Coordinate
 		}
 	}
 	return errors.Join(errs...)

@@ -69,7 +69,7 @@ func addBoden(w *world.World, level world.Level) {
 			if x == 0 || x == 29 || y == 0 || y == 29 {
 				border := &world.Entity{
 					Level: level,
-					Position: option.Some[world.Coordinates](world.TileCoordinates{
+					Coordinate: option.Some[world.Coordinate](world.TileCoordinate{
 						TileX: x,
 						TileY: y,
 					}),
@@ -85,7 +85,7 @@ func addBoden(w *world.World, level world.Level) {
 
 			boden := &world.Entity{
 				Level: level,
-				Position: option.Some[world.Coordinates](world.TileCoordinates{
+				Coordinate: option.Some[world.Coordinate](world.TileCoordinate{
 					TileX: x,
 					TileY: y,
 				}),
@@ -99,7 +99,7 @@ func addBoden(w *world.World, level world.Level) {
 			if rand.Float64() <= 0.2 {
 				box := &world.Entity{
 					Level: level,
-					Position: option.Some[world.Coordinates](world.TileCoordinates{
+					Coordinate: option.Some[world.Coordinate](world.TileCoordinate{
 						TileX: x,
 						TileY: y,
 					}),
@@ -126,7 +126,7 @@ func addBoden(w *world.World, level world.Level) {
 				tisch := &world.Entity{
 					Level:  level,
 					Static: true,
-					Position: option.Some[world.Coordinates](world.TileCoordinates{
+					Coordinate: option.Some[world.Coordinate](world.TileCoordinate{
 						TileX: x,
 						TileY: y,
 					}),
@@ -141,7 +141,7 @@ func addBoden(w *world.World, level world.Level) {
 					PortalComponent: option.Some(world.PortalComponent{
 						Destination: world.Position{
 							Level: destinationLevel,
-							Position: world.TileCoordinates{
+							Coordinate: world.TileCoordinate{
 								TileX: 15,
 								TileY: 15,
 							},
@@ -156,7 +156,7 @@ func addBoden(w *world.World, level world.Level) {
 
 func main() {
 	player := &world.Entity{
-		Position: option.Some[world.Coordinates](world.TileCoordinates{
+		Coordinate: option.Some[world.Coordinate](world.TileCoordinate{
 			TileX: 15,
 			TileY: 15,
 		}),
@@ -177,7 +177,7 @@ func main() {
 		PathfinderComponent: option.Some(world.PathfinderComponent{
 			Destination: option.Some(world.Position{
 				Level: 0,
-				Position: world.TileCoordinates{
+				Coordinate: world.TileCoordinate{
 					TileX: 25,
 					TileY: 25,
 				},

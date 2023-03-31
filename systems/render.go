@@ -48,11 +48,11 @@ func drawBackground(w *world.World, screen *ebiten.Image) {
 	}
 }
 
-func worldPositionToScreenPosition(w *world.World, position world.Coordinates) (x, y float64) {
-	coordinates := position.WorldCoordinates()
-	playerCoordinates := w.Player.Position.Data.WorldCoordinates()
-	playerXOffset := coordinates.WorldX - playerCoordinates.WorldX
-	playerYOffset := coordinates.WorldY - playerCoordinates.WorldY
+func worldCoordinateToScreenPosition(w *world.World, coordinate world.Coordinate) (x, y float64) {
+	worldCoordinate := coordinate.WorldCoordinate()
+	playerCoordinates := w.Player.Coordinate.Data.WorldCoordinate()
+	playerXOffset := worldCoordinate.WorldX - playerCoordinates.WorldX
+	playerYOffset := worldCoordinate.WorldY - playerCoordinates.WorldY
 	return graphics.PlayerX + playerXOffset, graphics.PlayerY + playerYOffset
 }
 
@@ -93,13 +93,13 @@ func drawImages(w *world.World, screen *ebiten.Image) error {
 				continue
 			}
 
-			if !entity.Position.Present {
-				errs = append(errs, newRequireComponentError(entity, "position"))
+			if !entity.Coordinate.Present {
+				errs = append(errs, newRequireComponentError(entity, "coordinate"))
 				continue
 			}
-			position := entity.Position.Data
+			coordinate := entity.Coordinate.Data
 
-			screenPositionX, screenPositionY := worldPositionToScreenPosition(w, position)
+			screenPositionX, screenPositionY := worldCoordinateToScreenPosition(w, coordinate)
 
 			var drawOptions ebiten.DrawImageOptions
 			drawOptions.GeoM.Translate(screenPositionX, screenPositionY)

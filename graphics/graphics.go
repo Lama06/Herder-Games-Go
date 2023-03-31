@@ -1,8 +1,6 @@
 package graphics
 
 const (
-	TileSize = 32
-
 	WindowWidth  = 600
 	WindowHeight = 300
 

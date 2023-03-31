@@ -26,20 +26,20 @@ func moveWithVelocity(w *world.World) error {
 		}
 		velocityComponent := entity.VelocityComponent.Data
 
-		if !entity.Position.Present {
-			errs = append(errs, newRequireComponentError(entity, "position"))
+		if !entity.Coordinate.Present {
+			errs = append(errs, newRequireComponentError(entity, "coordinate"))
 			continue
 		}
-		position := &entity.Position.Data
+		coordinate := &entity.Coordinate.Data
 
-		oldPosition := *position
+		oldCoordinate := *coordinate
 
 		collisionsBeforeMove, _ := getCollidingEntities(w, entity, false)
-		*position = oldPosition.WorldCoordinates().Add(velocityComponent.VelocityX, velocityComponent.VelocityY)
+		*coordinate = oldCoordinate.WorldCoordinate().Add(velocityComponent.VelocityX, velocityComponent.VelocityY)
 		collisionsAfterMove, _ := getCollidingEntities(w, entity, false)
 
 		if len(collisionsBeforeMove) == 0 && len(collisionsAfterMove) != 0 {
-			*position = oldPosition
+			*coordinate = oldCoordinate
 		}
 	}
 	return errors.Join(errs...)

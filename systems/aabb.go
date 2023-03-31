@@ -9,10 +9,10 @@ type aabb struct {
 }
 
 func aabbFromEntity(entity *world.Entity) (bounds aabb, trigger bool, err error) {
-	if !entity.Position.Present {
-		return aabb{}, false, newRequireComponentError(entity, "position")
+	if !entity.Coordinate.Present {
+		return aabb{}, false, newRequireComponentError(entity, "coordinate")
 	}
-	position := entity.Position.Data.WorldCoordinates()
+	coordinate := entity.Coordinate.Data.WorldCoordinate()
 
 	if !entity.RectColliderComponent.Present {
 		return aabb{}, false, newRequireComponentError(entity, "rect collider")
@@ -20,8 +20,8 @@ func aabbFromEntity(entity *world.Entity) (bounds aabb, trigger bool, err error)
 	rectColliderComponent := entity.RectColliderComponent.Data
 
 	return aabb{
-		x:      position.WorldX,
-		y:      position.WorldY,
+		x:      coordinate.WorldX,
+		y:      coordinate.WorldY,
 		width:  rectColliderComponent.Width,
 		height: rectColliderComponent.Height,
 	}, rectColliderComponent.Trigger, nil
@@ -57,19 +57,19 @@ func (first aabb) collidesWith(second aabb) bool {
 	return true
 }
 
-func (bounds aabb) blockedTiles() map[world.TileCoordinates]struct{} {
-	result := make(map[world.TileCoordinates]struct{})
+func (bounds aabb) blockedTiles() map[world.TileCoordinate]struct{} {
+	result := make(map[world.TileCoordinate]struct{})
 
 	numTilesX := int(bounds.width/world.TileSize) + 1
 	numTilesY := int(bounds.height/world.TileSize) + 1
 
 	for tileOffsetX := 0; tileOffsetX < numTilesX; tileOffsetX++ {
 		for tileOffsetY := 0; tileOffsetY < numTilesY; tileOffsetY++ {
-			coordinates := world.WorldCoordinates{
+			coordinate := world.WorldCoordinate{
 				WorldX: bounds.x + float64(tileOffsetX*world.TileSize),
 				WorldY: bounds.y + float64(tileOffsetY*world.TileSize),
 			}
-			result[world.TileCoordinatesFromWorldCoordinates(coordinates)] = struct{}{}
+			result[world.TileCoordinateFromCoordinate(coordinate)] = struct{}{}
 		}
 	}
 

@@ -30,16 +30,16 @@ type KeyboardControllerComponent struct {
 }
 
 type MoveToCoordinateComponent struct {
-	Coordinate Coordinates
+	Coordinate Coordinate
 	Speed      float64
 }
 
 type MoveToCoordinatesComponent struct {
-	Coordinates       []Coordinates
+	Coordinates       []Coordinate
 	CurrentCoordinate int
 }
 
-func (m *MoveToCoordinatesComponent) SetCoordinates(coordinates []Coordinates) {
+func (m *MoveToCoordinatesComponent) SetCoordinates(coordinates []Coordinate) {
 	m.Coordinates = coordinates
 	m.CurrentCoordinate = 0
 }

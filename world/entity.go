@@ -3,9 +3,9 @@ package world
 import "github.com/Lama06/Herder-Games/option"
 
 type Entity struct {
-	Level    Level
-	Position option.Option[Coordinates]
-	Static   bool
+	Level      Level
+	Coordinate option.Option[Coordinate]
+	Static     bool
 
 	BackgroundComponent option.Option[BackgroundComponent]
 	ImageComponent      option.Option[ImageComponent]
