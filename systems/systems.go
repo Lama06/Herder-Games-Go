@@ -37,11 +37,28 @@ func Update(w *world.World) error {
 		errs = append(errs, fmt.Errorf("failed to run add image bounds colliders system: %w", err))
 	}
 
+	initialiseBlockedPathfindingTiles(w)
+
 	clearVelocity(w)
 
 	err = handleKeyboardInput(w)
 	if err != nil {
 		errs = append(errs, fmt.Errorf("failed to run handle keyboard input system: %w", err))
+	}
+
+	err = pathfind(w)
+	if err != nil {
+		errs = append(errs, fmt.Errorf("failed to run pathfind system: %w", err))
+	}
+
+	err = moveToCoordinates(w)
+	if err != nil {
+		errs = append(errs, fmt.Errorf("failed to run move to coordinates system: %w", err))
+	}
+
+	err = moveToCoordinate(w)
+	if err != nil {
+		errs = append(errs, fmt.Errorf("failed to run move to coordinate system: %w", err))
 	}
 
 	err = moveWithVelocity(w)

@@ -35,7 +35,7 @@ func moveWithVelocity(w *world.World) error {
 		oldPosition := *position
 
 		collisionsBeforeMove, _ := getCollidingEntities(w, entity, false)
-		*position = oldPosition.Coordinates().Add(velocityComponent.VelocityX, velocityComponent.VelocityY)
+		*position = oldPosition.WorldCoordinates().Add(velocityComponent.VelocityX, velocityComponent.VelocityY)
 		collisionsAfterMove, _ := getCollidingEntities(w, entity, false)
 
 		if len(collisionsBeforeMove) == 0 && len(collisionsAfterMove) != 0 {

@@ -34,6 +34,20 @@ func addImageBoundsColliders(w *world.World) error {
 	return errors.Join(errs...)
 }
 
+func isCollision(first *world.Entity, second *world.Entity, triggerCollision bool) bool {
+	firstAabb, firstTrigger, err := aabbFromEntity(first)
+	if err != nil || (firstTrigger && !triggerCollision) {
+		return false
+	}
+
+	secondAabb, secondTrigger, err := aabbFromEntity(second)
+	if err != nil || (secondTrigger && !triggerCollision) {
+		return false
+	}
+
+	return firstAabb.collidesWith(secondAabb)
+}
+
 func getCollidingEntities(w *world.World, entity *world.Entity, triggerCollisions bool) ([]*world.Entity, error) {
 	entityAabb, entityTrigger, err := aabbFromEntity(entity)
 	if err != nil {

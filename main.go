@@ -14,10 +14,19 @@ import (
 )
 
 type Game struct {
+	start bool
 	world *world.World
 }
 
 func (g *Game) Update() error {
+	if ebiten.IsKeyPressed(ebiten.KeySpace) {
+		g.start = true
+	}
+
+	if !g.start {
+		return nil
+	}
+
 	err := systems.Update(g.world)
 	if err != nil {
 		log.Println(err)
@@ -26,6 +35,10 @@ func (g *Game) Update() error {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
+	if !g.start {
+		return
+	}
+
 	err := systems.Draw(g.world, screen)
 	if err != nil {
 		log.Println(err)
@@ -60,9 +73,10 @@ func addBoden(w *world.World, level world.Level) {
 						TileX: x,
 						TileY: y,
 					}),
+					Static: true,
 					RectColliderComponent: option.Some(world.RectColliderComponent{
-						Width:  graphics.TileSize,
-						Height: graphics.TileSize,
+						Width:  world.TileSize,
+						Height: world.TileSize,
 					}),
 				}
 				w.Entities[border] = struct{}{}
@@ -82,13 +96,14 @@ func addBoden(w *world.World, level world.Level) {
 			}
 			w.Entities[boden] = struct{}{}
 
-			if rand.Float64() <= 0.02 {
+			if rand.Float64() <= 0.2 {
 				box := &world.Entity{
 					Level: level,
 					Position: option.Some[world.Coordinates](world.TileCoordinates{
 						TileX: x,
 						TileY: y,
 					}),
+					Static: true,
 					ImageComponent: option.Some(world.ImageComponent{
 						Layer: TischLayer,
 					}),
@@ -109,7 +124,8 @@ func addBoden(w *world.World, level world.Level) {
 					destinationLevel = 0
 				}
 				tisch := &world.Entity{
-					Level: level,
+					Level:  level,
+					Static: true,
 					Position: option.Some[world.Coordinates](world.TileCoordinates{
 						TileX: x,
 						TileY: y,
@@ -152,8 +168,21 @@ func main() {
 			Height: 20,
 			Color:  colornames.Red,
 		}),
-		VelocityComponent:            option.Some(world.VelocityComponent{}),
-		KeyboardControllerComponent:  option.Some(world.KeyboardControllerComponent{Speed: 2}),
+		VelocityComponent: option.Some(world.VelocityComponent{}),
+		//KeyboardControllerComponent:  option.Some(world.KeyboardControllerComponent{Speed: 2}),
+		MoveToCoordinateComponent: option.Some(world.MoveToCoordinateComponent{
+			Speed: 1,
+		}),
+		MoveToCoordinatesComponent: option.Some(world.MoveToCoordinatesComponent{}),
+		PathfinderComponent: option.Some(world.PathfinderComponent{
+			Destination: option.Some(world.Position{
+				Level: 0,
+				Position: world.TileCoordinates{
+					TileX: 25,
+					TileY: 25,
+				},
+			}),
+		}),
 		RectColliderComponent:        option.Some(world.RectColliderComponent{}),
 		ImageBoundsColliderComponent: option.Some(world.ImageBoundsColliderComponent{}),
 	}
@@ -169,7 +198,9 @@ func main() {
 	addBoden(world, 1)
 
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
+	ebiten.SetWindowSize(1000, 500)
 	ebiten.RunGame(&Game{
+		start: true,
 		world: world,
 	})
 }

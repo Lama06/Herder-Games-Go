@@ -21,6 +21,10 @@ func teleportEntitiesTouchingPortal(w *world.World) error {
 		}
 
 		for _, collision := range collisions {
+			if collision.PathfinderComponent.Present {
+				continue
+			}
+
 			if !collision.Position.Present {
 				continue
 			}

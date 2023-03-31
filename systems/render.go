@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	"github.com/Lama06/Herder-Games/graphics"
+	"github.com/Lama06/Herder-Games/option"
 	"github.com/Lama06/Herder-Games/world"
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -27,6 +28,7 @@ func addRectImages(w *world.World) error {
 		image.Fill(rectComponent.Color)
 
 		imageComponent.Image = image
+		entity.RectComponent = option.None[world.RectComponent]()
 	}
 	return errors.Join(errs...)
 }
@@ -47,8 +49,8 @@ func drawBackground(w *world.World, screen *ebiten.Image) {
 }
 
 func worldPositionToScreenPosition(w *world.World, position world.Coordinates) (x, y float64) {
-	coordinates := position.Coordinates()
-	playerCoordinates := w.Player.Position.Data.Coordinates()
+	coordinates := position.WorldCoordinates()
+	playerCoordinates := w.Player.Position.Data.WorldCoordinates()
 	playerXOffset := coordinates.WorldX - playerCoordinates.WorldX
 	playerYOffset := coordinates.WorldY - playerCoordinates.WorldY
 	return graphics.PlayerX + playerXOffset, graphics.PlayerY + playerYOffset

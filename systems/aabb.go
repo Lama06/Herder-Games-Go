@@ -1,6 +1,8 @@
 package systems
 
-import "github.com/Lama06/Herder-Games/world"
+import (
+	"github.com/Lama06/Herder-Games/world"
+)
 
 type aabb struct {
 	x, y, width, height float64
@@ -10,7 +12,7 @@ func aabbFromEntity(entity *world.Entity) (bounds aabb, trigger bool, err error)
 	if !entity.Position.Present {
 		return aabb{}, false, newRequireComponentError(entity, "position")
 	}
-	position := entity.Position.Data.Coordinates()
+	position := entity.Position.Data.WorldCoordinates()
 
 	if !entity.RectColliderComponent.Present {
 		return aabb{}, false, newRequireComponentError(entity, "rect collider")
@@ -53,4 +55,23 @@ func (first aabb) collidesWith(second aabb) bool {
 	}
 
 	return true
+}
+
+func (bounds aabb) blockedTiles() map[world.TileCoordinates]struct{} {
+	result := make(map[world.TileCoordinates]struct{})
+
+	numTilesX := int(bounds.width/world.TileSize) + 1
+	numTilesY := int(bounds.height/world.TileSize) + 1
+
+	for tileOffsetX := 0; tileOffsetX < numTilesX; tileOffsetX++ {
+		for tileOffsetY := 0; tileOffsetY < numTilesY; tileOffsetY++ {
+			coordinates := world.WorldCoordinates{
+				WorldX: bounds.x + float64(tileOffsetX*world.TileSize),
+				WorldY: bounds.y + float64(tileOffsetY*world.TileSize),
+			}
+			result[world.TileCoordinatesFromWorldCoordinates(coordinates)] = struct{}{}
+		}
+	}
+
+	return result
 }
