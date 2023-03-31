@@ -14,14 +14,14 @@ type Coordinates interface {
 }
 
 type WorldCoordinates struct {
-	WorldX, WorldY int
+	WorldX, WorldY float64
 }
 
 func (w WorldCoordinates) Coordinates() WorldCoordinates {
 	return w
 }
 
-func (w WorldCoordinates) Add(x, y int) WorldCoordinates {
+func (w WorldCoordinates) Add(x, y float64) WorldCoordinates {
 	return WorldCoordinates{
 		WorldX: w.WorldX + x,
 		WorldY: w.WorldY + y,
@@ -34,7 +34,7 @@ type TileCoordinates struct {
 
 func (t TileCoordinates) Coordinates() WorldCoordinates {
 	return WorldCoordinates{
-		WorldX: t.TileX * graphics.TileSize,
-		WorldY: t.TileY * graphics.TileSize,
+		WorldX: float64(t.TileX) * graphics.TileSize,
+		WorldY: float64(t.TileY) * graphics.TileSize,
 	}
 }

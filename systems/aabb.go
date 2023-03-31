@@ -3,7 +3,7 @@ package systems
 import "github.com/Lama06/Herder-Games/world"
 
 type aabb struct {
-	x, y, width, height int
+	x, y, width, height float64
 }
 
 func aabbFromEntity(entity *world.Entity) (aabb, error) {

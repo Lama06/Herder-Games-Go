@@ -23,7 +23,7 @@ type RectComponent struct {
 }
 
 type RectColliderComponent struct {
-	Width, Height int
+	Width, Height float64
 }
 
 type ImageBoundsColliderComponent struct{}
@@ -33,9 +33,20 @@ type PreventCollisionsComponent struct {
 }
 
 type KeyboardControllerComponent struct {
-	Speed int
+	Speed float64
 }
 
 type PortalComponent struct {
 	Destination Position
+}
+
+type VelocityComponent struct {
+}
+
+type MoveToPositionComponent struct {
+	Position Position
+	Speed    float64
+}
+
+type PathfindComponent struct {
 }

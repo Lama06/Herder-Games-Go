@@ -44,7 +44,7 @@ func addRectImages(w *world.World) {
 	}
 }
 
-func worldPositionToScreenPosition(w *world.World, position world.Coordinates) (x, y int) {
+func worldPositionToScreenPosition(w *world.World, position world.Coordinates) (x, y float64) {
 	coordinates := position.Coordinates()
 	playerCoordinates := w.Player.Position.Data.Coordinates()
 	playerXOffset := coordinates.WorldX - playerCoordinates.WorldX
@@ -96,7 +96,7 @@ func drawImages(w *world.World, screen *ebiten.Image) error {
 			screenPositionX, screenPositionY := worldPositionToScreenPosition(w, position)
 
 			var drawOptions ebiten.DrawImageOptions
-			drawOptions.GeoM.Translate(float64(screenPositionX), float64(screenPositionY))
+			drawOptions.GeoM.Translate(screenPositionX, screenPositionY)
 			screen.DrawImage(imageComponent.Image, &drawOptions)
 		}
 	}

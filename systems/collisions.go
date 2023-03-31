@@ -25,8 +25,8 @@ func addImageBoundsColliders(w *world.World) error {
 
 		if !entity.RectColliderComponent.Present {
 			entity.RectColliderComponent = option.Some(world.RectColliderComponent{
-				Width:  imageWidth,
-				Height: imageHeight,
+				Width:  float64(imageWidth),
+				Height: float64(imageHeight),
 			})
 		}
 	}

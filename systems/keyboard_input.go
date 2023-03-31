@@ -7,7 +7,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
-var keyOffsets = map[ebiten.Key]struct{ x, y int }{
+var keyOffsets = map[ebiten.Key]struct{ x, y float64 }{
 	ebiten.KeyW: {x: 0, y: -1},
 	ebiten.KeyA: {x: -1, y: 0},
 	ebiten.KeyS: {x: 0, y: 1},
