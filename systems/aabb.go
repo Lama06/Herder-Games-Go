@@ -6,14 +6,14 @@ type aabb struct {
 	x, y, width, height float64
 }
 
-func aabbFromEntity(entity *world.Entity) (aabb, error) {
+func aabbFromEntity(entity *world.Entity) (bounds aabb, trigger bool, err error) {
 	if !entity.Position.Present {
-		return aabb{}, newRequireComponentError(entity, "position")
+		return aabb{}, false, newRequireComponentError(entity, "position")
 	}
 	position := entity.Position.Data.Coordinates()
 
 	if !entity.RectColliderComponent.Present {
-		return aabb{}, newRequireComponentError(entity, "rect collider")
+		return aabb{}, false, newRequireComponentError(entity, "rect collider")
 	}
 	rectColliderComponent := entity.RectColliderComponent.Data
 
@@ -22,8 +22,7 @@ func aabbFromEntity(entity *world.Entity) (aabb, error) {
 		y:      position.WorldY,
 		width:  rectColliderComponent.Width,
 		height: rectColliderComponent.Height,
-	}, nil
-
+	}, rectColliderComponent.Trigger, nil
 }
 
 func (first aabb) collidesWith(second aabb) bool {

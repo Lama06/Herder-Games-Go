@@ -27,26 +27,31 @@ func (r requireComponentError) Error() string {
 func Update(w *world.World) error {
 	var errs []error
 
-	err := handleKeyboardInput(w)
+	err := addRectImages(w)
 	if err != nil {
-		errs = append(errs, fmt.Errorf("failed to run handle keyboard input system: %w", err))
+		errs = append(errs, fmt.Errorf("failed to run add rect images system: %w", err))
 	}
-
-	addRectImages(w)
 
 	err = addImageBoundsColliders(w)
 	if err != nil {
 		errs = append(errs, fmt.Errorf("failed to run add image bounds colliders system: %w", err))
 	}
 
+	clearVelocity(w)
+
+	err = handleKeyboardInput(w)
+	if err != nil {
+		errs = append(errs, fmt.Errorf("failed to run handle keyboard input system: %w", err))
+	}
+
+	err = moveWithVelocity(w)
+	if err != nil {
+		errs = append(errs, fmt.Errorf("failed to run move with velocity system: %w", err))
+	}
+
 	err = teleportEntitiesTouchingPortal(w)
 	if err != nil {
 		errs = append(errs, fmt.Errorf("failed to run teleport entities touching portal system: %w", err))
-	}
-
-	err = preventCollisions(w)
-	if err != nil {
-		errs = append(errs, fmt.Errorf("failed to run prevent collisions system: %w", err))
 	}
 
 	return errors.Join(errs...)

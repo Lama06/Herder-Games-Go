@@ -3,7 +3,6 @@ package world
 import (
 	"image/color"
 
-	"github.com/Lama06/Herder-Games/option"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
@@ -17,36 +16,25 @@ type ImageComponent struct {
 }
 
 type RectComponent struct {
-	Layer         int
 	Width, Height int
 	Color         color.Color
 }
 
-type RectColliderComponent struct {
-	Width, Height float64
-}
-
-type ImageBoundsColliderComponent struct{}
-
-type PreventCollisionsComponent struct {
-	LastLegalPosition option.Option[Position]
+type VelocityComponent struct {
+	VelocityX, VelocityY float64
 }
 
 type KeyboardControllerComponent struct {
 	Speed float64
 }
 
+type RectColliderComponent struct {
+	Width, Height float64
+	Trigger       bool
+}
+
+type ImageBoundsColliderComponent struct{}
+
 type PortalComponent struct {
 	Destination Position
-}
-
-type VelocityComponent struct {
-}
-
-type MoveToPositionComponent struct {
-	Position Position
-	Speed    float64
-}
-
-type PathfindComponent struct {
 }

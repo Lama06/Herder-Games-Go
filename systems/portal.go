@@ -14,7 +14,7 @@ func teleportEntitiesTouchingPortal(w *world.World) error {
 		}
 		portalComponent := portal.PortalComponent.Data
 
-		collisions, err := getCollidingEntities(portal, w)
+		collisions, err := getCollidingEntities(w, portal, true)
 		if err != nil {
 			errs = append(errs, err)
 			continue
@@ -24,10 +24,8 @@ func teleportEntitiesTouchingPortal(w *world.World) error {
 			if !collision.Position.Present {
 				continue
 			}
-			position := &collision.Position.Data
-
 			collision.Level = portalComponent.Destination.Level
-			*position = portalComponent.Destination.Position
+			collision.Position.Data = portalComponent.Destination.Position
 		}
 	}
 	return errors.Join(errs...)

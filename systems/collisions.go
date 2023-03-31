@@ -3,7 +3,6 @@ package systems
 import (
 	"errors"
 
-	"github.com/Lama06/Herder-Games/option"
 	"github.com/Lama06/Herder-Games/world"
 )
 
@@ -14,6 +13,12 @@ func addImageBoundsColliders(w *world.World) error {
 			continue
 		}
 
+		if !entity.RectColliderComponent.Present {
+			errs = append(errs, newRequireComponentError(entity, "rect collider"))
+			continue
+		}
+		rectCollider := &entity.RectColliderComponent.Data
+
 		if !entity.ImageComponent.Present {
 			errs = append(errs, newRequireComponentError(entity, "image"))
 			continue
@@ -23,20 +28,20 @@ func addImageBoundsColliders(w *world.World) error {
 		imageWidth := imageComponent.Image.Bounds().Dx()
 		imageHeight := imageComponent.Image.Bounds().Dy()
 
-		if !entity.RectColliderComponent.Present {
-			entity.RectColliderComponent = option.Some(world.RectColliderComponent{
-				Width:  float64(imageWidth),
-				Height: float64(imageHeight),
-			})
-		}
+		rectCollider.Width = float64(imageWidth)
+		rectCollider.Height = float64(imageHeight)
 	}
 	return errors.Join(errs...)
 }
 
-func getCollidingEntities(entity *world.Entity, w *world.World) ([]*world.Entity, error) {
-	entityAabb, err := aabbFromEntity(entity)
+func getCollidingEntities(w *world.World, entity *world.Entity, triggerCollisions bool) ([]*world.Entity, error) {
+	entityAabb, entityTrigger, err := aabbFromEntity(entity)
 	if err != nil {
 		return nil, err
+	}
+
+	if entityTrigger && !triggerCollisions {
+		return nil, nil
 	}
 
 	var collisions []*world.Entity
@@ -49,8 +54,12 @@ func getCollidingEntities(entity *world.Entity, w *world.World) ([]*world.Entity
 			continue
 		}
 
-		otherAabb, err := aabbFromEntity(other)
+		otherAabb, otherTrigger, err := aabbFromEntity(other)
 		if err != nil {
+			continue
+		}
+
+		if otherTrigger && !triggerCollisions {
 			continue
 		}
 
@@ -59,45 +68,4 @@ func getCollidingEntities(entity *world.Entity, w *world.World) ([]*world.Entity
 		}
 	}
 	return collisions, nil
-
-}
-
-func preventCollisions(w *world.World) error {
-	var errs []error
-	for entity := range w.Entities {
-		if !entity.PreventCollisionsComponent.Present {
-			continue
-		}
-		preventCollisionsComponent := &entity.PreventCollisionsComponent.Data
-
-		if !entity.Position.Present {
-			errs = append(errs, newRequireComponentError(entity, "position"))
-			continue
-		}
-		position := &entity.Position.Data
-
-		collisions, err := getCollidingEntities(entity, w)
-		if err != nil {
-			errs = append(errs, err)
-			continue
-		}
-
-		if len(collisions) != 0 {
-			if !preventCollisionsComponent.LastLegalPosition.Present {
-				continue
-			}
-			lastLegalPosition := preventCollisionsComponent.LastLegalPosition.Data
-			if lastLegalPosition.Level != entity.Level {
-				continue
-			}
-
-			*position = lastLegalPosition.Position
-		} else {
-			preventCollisionsComponent.LastLegalPosition = option.Some(world.Position{
-				Level:    entity.Level,
-				Position: *position,
-			})
-		}
-	}
-	return errors.Join(errs...)
 }

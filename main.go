@@ -53,10 +53,6 @@ func addBoden(w *world.World, level world.Level) {
 
 	for x := 0; x < 30; x++ {
 		for y := 0; y < 30; y++ {
-			if (x >= 13 && x <= 17) && (y >= 13 && y <= 17) {
-				continue
-			}
-
 			if x == 0 || x == 29 || y == 0 || y == 29 {
 				border := &world.Entity{
 					Level: level,
@@ -87,21 +83,24 @@ func addBoden(w *world.World, level world.Level) {
 			w.Entities[boden] = struct{}{}
 
 			if rand.Float64() <= 0.02 {
-				tisch := &world.Entity{
+				box := &world.Entity{
 					Level: level,
 					Position: option.Some[world.Coordinates](world.TileCoordinates{
 						TileX: x,
 						TileY: y,
 					}),
+					ImageComponent: option.Some(world.ImageComponent{
+						Layer: TischLayer,
+					}),
 					RectComponent: option.Some(world.RectComponent{
 						Width:  20,
 						Height: 20,
 						Color:  colornames.Red,
-						Layer:  PlayerLayer,
 					}),
+					RectColliderComponent:        option.Some(world.RectColliderComponent{}),
 					ImageBoundsColliderComponent: option.Some(world.ImageBoundsColliderComponent{}),
 				}
-				w.Entities[tisch] = struct{}{}
+				w.Entities[box] = struct{}{}
 			}
 
 			if rand.Float64() <= 0.01 {
@@ -118,6 +117,9 @@ func addBoden(w *world.World, level world.Level) {
 					ImageComponent: option.Some(world.ImageComponent{
 						Image: ebiten.NewImageFromImage(assets.TischImg),
 						Layer: TischLayer,
+					}),
+					RectColliderComponent: option.Some(world.RectColliderComponent{
+						Trigger: true,
 					}),
 					ImageBoundsColliderComponent: option.Some(world.ImageBoundsColliderComponent{}),
 					PortalComponent: option.Some(world.PortalComponent{
@@ -142,15 +144,18 @@ func main() {
 			TileX: 15,
 			TileY: 15,
 		}),
+		ImageComponent: option.Some(world.ImageComponent{
+			Layer: PlayerLayer,
+		}),
 		RectComponent: option.Some(world.RectComponent{
 			Width:  20,
 			Height: 20,
 			Color:  colornames.Red,
-			Layer:  PlayerLayer,
 		}),
+		VelocityComponent:            option.Some(world.VelocityComponent{}),
 		KeyboardControllerComponent:  option.Some(world.KeyboardControllerComponent{Speed: 2}),
+		RectColliderComponent:        option.Some(world.RectColliderComponent{}),
 		ImageBoundsColliderComponent: option.Some(world.ImageBoundsColliderComponent{}),
-		PreventCollisionsComponent:   option.Some(world.PreventCollisionsComponent{}),
 	}
 
 	world := &world.World{

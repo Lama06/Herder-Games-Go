@@ -22,15 +22,16 @@ func handleKeyboardInput(w *world.World) error {
 		}
 		keyboardControllerComponent := entity.KeyboardControllerComponent.Data
 
-		if !entity.Position.Present {
-			errs = append(errs, newRequireComponentError(entity, "position"))
+		if !entity.VelocityComponent.Present {
+			errs = append(errs, newRequireComponentError(entity, "velocity"))
 			continue
 		}
-		position := &entity.Position.Data
+		velocity := &entity.VelocityComponent.Data
 
 		for key, offset := range keyOffsets {
 			if ebiten.IsKeyPressed(key) {
-				*position = (*position).Coordinates().Add(offset.x*keyboardControllerComponent.Speed, offset.y*keyboardControllerComponent.Speed)
+				velocity.VelocityX += offset.x * keyboardControllerComponent.Speed
+				velocity.VelocityY += offset.y * keyboardControllerComponent.Speed
 			}
 		}
 	}

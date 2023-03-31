@@ -5,10 +5,31 @@ import (
 	"sort"
 
 	"github.com/Lama06/Herder-Games/graphics"
-	"github.com/Lama06/Herder-Games/option"
 	"github.com/Lama06/Herder-Games/world"
 	"github.com/hajimehoshi/ebiten/v2"
 )
+
+func addRectImages(w *world.World) error {
+	var errs []error
+	for entity := range w.Entities {
+		if !entity.RectComponent.Present {
+			continue
+		}
+		rectComponent := entity.RectComponent.Data
+
+		if !entity.ImageComponent.Present {
+			errs = append(errs, newRequireComponentError(entity, "image"))
+			continue
+		}
+		imageComponent := &entity.ImageComponent.Data
+
+		image := ebiten.NewImage(rectComponent.Width, rectComponent.Height)
+		image.Fill(rectComponent.Color)
+
+		imageComponent.Image = image
+	}
+	return errors.Join(errs...)
+}
 
 func drawBackground(w *world.World, screen *ebiten.Image) {
 	for entity := range w.Entities {
@@ -22,25 +43,6 @@ func drawBackground(w *world.World, screen *ebiten.Image) {
 		}
 
 		screen.Fill(backgroundComponent.Color)
-	}
-}
-
-func addRectImages(w *world.World) {
-	for entity := range w.Entities {
-		if !entity.RectComponent.Present {
-			continue
-		}
-		rectComponent := entity.RectComponent.Data
-
-		if !entity.ImageComponent.Present {
-			image := ebiten.NewImage(rectComponent.Width, rectComponent.Height)
-			image.Fill(rectComponent.Color)
-
-			entity.ImageComponent = option.Some(world.ImageComponent{
-				Image: image,
-				Layer: rectComponent.Layer,
-			})
-		}
 	}
 }
 
@@ -84,6 +86,7 @@ func drawImages(w *world.World, screen *ebiten.Image) error {
 				continue
 			}
 			imageComponent := entity.ImageComponent.Data
+
 			if imageComponent.Layer != layer {
 				continue
 			}
@@ -93,6 +96,7 @@ func drawImages(w *world.World, screen *ebiten.Image) error {
 				continue
 			}
 			position := entity.Position.Data
+
 			screenPositionX, screenPositionY := worldPositionToScreenPosition(w, position)
 
 			var drawOptions ebiten.DrawImageOptions
