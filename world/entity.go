@@ -15,6 +15,7 @@ type Entity struct {
 
 	KeyboardControllerComponent option.Option[KeyboardControllerComponent]
 
+	MoveSpeedComponent         option.Option[MoveSpeedComponent]
 	MoveToCoordinateComponent  option.Option[MoveToCoordinateComponent]
 	MoveToCoordinatesComponent option.Option[MoveToCoordinatesComponent]
 	PathfinderComponent        option.Option[PathfinderComponent]

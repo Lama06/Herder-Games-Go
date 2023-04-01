@@ -3,7 +3,6 @@ package world
 import (
 	"image/color"
 
-	"github.com/Lama06/Herder-Games/option"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
@@ -29,40 +28,92 @@ type KeyboardControllerComponent struct {
 	Speed float64
 }
 
-type MoveToCoordinateComponent struct {
-	Coordinate Coordinate
-	Speed      float64
+type MoveSpeedComponent struct {
+	Speed float64
 }
 
+type MoveToCoordinateComponentState byte
+
+const (
+	MoveToCoordinateComponentStateDisabled MoveToCoordinateComponentState = iota
+	MoveToCoordinateComponentStateMoving
+	MoveToCoordinateComponentStateArrived
+)
+
+type MoveToCoordinateComponent struct {
+	State      MoveToCoordinateComponentState
+	Coordinate Coordinate
+}
+
+func (m *MoveToCoordinateComponent) Disable() {
+	m.State = MoveToCoordinateComponentStateDisabled
+	m.Coordinate = nil
+}
+
+func (m *MoveToCoordinateComponent) SetCoordinate(coordiante Coordinate) {
+	if coordiante == nil {
+		panic("cannot move to nil coordinate")
+	}
+
+	m.State = MoveToCoordinateComponentStateMoving
+	m.Coordinate = coordiante
+}
+
+type MoveToCoordinatesComponentState byte
+
+const (
+	MoveToCoordinatesComponentStateDisabled MoveToCoordinatesComponentState = iota
+	MoveToCoordinatesComponentStateIdle
+	MoveToCoordinatesComponentStateMoving
+	MoveToCoordinatesComponentStateFinished
+)
+
 type MoveToCoordinatesComponent struct {
+	State             MoveToCoordinatesComponentState
 	Coordinates       []Coordinate
 	CurrentCoordinate int
 }
 
-func (m *MoveToCoordinatesComponent) SetCoordinates(coordinates []Coordinate) {
-	m.Coordinates = coordinates
+func (m *MoveToCoordinatesComponent) Disable() {
+	m.State = MoveToCoordinatesComponentStateDisabled
+	m.Coordinates = nil
+	m.CurrentCoordinate = 0
+}
+
+func (m *MoveToCoordinatesComponent) SetCoordinates(coordiantes []Coordinate) {
+	if len(coordiantes) == 0 {
+		panic("cannot move to no coordinates")
+	}
+
+	m.State = MoveToCoordinatesComponentStateIdle
+	m.Coordinates = coordiantes
 	m.CurrentCoordinate = 0
 }
 
 type PathfinderComponentState byte
 
 const (
-	PathfinderComponentStateNotStarted PathfinderComponentState = iota
-	PathfinderComponentStateToPortal
-	PathfinderComponentStateToDestination
-	PathfinderComponentStateFinished
+	PathfinderComponentStateDisabled PathfinderComponentState = iota
+	PathfinderComponentStateIdle
+	PathfinderComponentStateNoPath
+	PathfinderComponentStateMovingToPortal
+	PathfinderComponentStateMovingToDestination
+	PathfinderComponentStateArrived
 )
 
 type PathfinderComponent struct {
-	Destination option.Option[Position]
 	State       PathfinderComponentState
-
-	Portal *Entity
+	Destination Position
 }
 
-func (p *PathfinderComponent) SetDestination(destination option.Option[Position]) {
+func (p *PathfinderComponent) Disable() {
+	p.State = PathfinderComponentStateDisabled
+	p.Destination = Position{}
+}
+
+func (p *PathfinderComponent) SetDestination(destination Position) {
+	p.State = PathfinderComponentStateIdle
 	p.Destination = destination
-	p.State = PathfinderComponentStateNotStarted
 }
 
 type RectColliderComponent struct {

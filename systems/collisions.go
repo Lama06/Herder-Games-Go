@@ -6,7 +6,7 @@ import (
 	"github.com/Lama06/Herder-Games/world"
 )
 
-func addImageBoundsColliders(w *world.World) error {
+func updateImageBoundsColliders(w *world.World) error {
 	var errs []error
 	for entity := range w.Entities {
 		if !entity.ImageBoundsColliderComponent.Present {
@@ -34,27 +34,13 @@ func addImageBoundsColliders(w *world.World) error {
 	return errors.Join(errs...)
 }
 
-func isCollision(first *world.Entity, second *world.Entity, triggerCollision bool) bool {
-	firstAabb, firstTrigger, err := aabbFromEntity(first)
-	if err != nil || (firstTrigger && !triggerCollision) {
-		return false
-	}
-
-	secondAabb, secondTrigger, err := aabbFromEntity(second)
-	if err != nil || (secondTrigger && !triggerCollision) {
-		return false
-	}
-
-	return firstAabb.collidesWith(secondAabb)
-}
-
-func getCollidingEntities(w *world.World, entity *world.Entity, triggerCollisions bool) ([]*world.Entity, error) {
+func getCollidingEntities(w *world.World, entity *world.Entity, includeTriggerCollisions bool) ([]*world.Entity, error) {
 	entityAabb, entityTrigger, err := aabbFromEntity(entity)
 	if err != nil {
 		return nil, err
 	}
 
-	if entityTrigger && !triggerCollisions {
+	if entityTrigger && !includeTriggerCollisions {
 		return nil, nil
 	}
 
@@ -73,7 +59,7 @@ func getCollidingEntities(w *world.World, entity *world.Entity, triggerCollision
 			continue
 		}
 
-		if otherTrigger && !triggerCollisions {
+		if otherTrigger && !includeTriggerCollisions {
 			continue
 		}
 

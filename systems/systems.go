@@ -32,7 +32,7 @@ func Update(w *world.World) error {
 		errs = append(errs, fmt.Errorf("failed to run add rect images system: %w", err))
 	}
 
-	err = addImageBoundsColliders(w)
+	err = updateImageBoundsColliders(w)
 	if err != nil {
 		errs = append(errs, fmt.Errorf("failed to run add image bounds colliders system: %w", err))
 	}

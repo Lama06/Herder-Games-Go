@@ -2,26 +2,11 @@ package systems
 
 import (
 	"errors"
-	"log"
 	"math"
-	"sort"
 
 	"github.com/Lama06/Herder-Games/astar"
 	"github.com/Lama06/Herder-Games/world"
 )
-
-func floatSign(number float64) float64 {
-	switch {
-	case number > 0:
-		return 1
-	case number < 0:
-		return -1
-	case number == 0:
-		return 0
-	default:
-		panic("unreachable")
-	}
-}
 
 func moveToCoordinate(w *world.World) error {
 	var errs []error
@@ -32,10 +17,10 @@ func moveToCoordinate(w *world.World) error {
 		moveToCoordinateComponent := &entity.MoveToCoordinateComponent.Data
 
 		if !entity.Coordinate.Present {
-			errs = append(errs, newRequireComponentError(entity, "position"))
+			errs = append(errs, newRequireComponentError(entity, "coordinate"))
 			continue
 		}
-		position := entity.Coordinate.Data.WorldCoordinate()
+		coordinate := entity.Coordinate.Data.WorldCoordinate()
 
 		if !entity.VelocityComponent.Present {
 			errs = append(errs, newRequireComponentError(entity, "velocity"))
@@ -43,41 +28,53 @@ func moveToCoordinate(w *world.World) error {
 		}
 		velocity := &entity.VelocityComponent.Data
 
-		if moveToCoordinateComponent.Coordinate == nil {
+		if !entity.MoveSpeedComponent.Present {
+			errs = append(errs, newRequireComponentError(entity, "move speed"))
 			continue
 		}
+		moveSpeedComponent := entity.MoveSpeedComponent.Data
 
-		//log.Println(moveToCoordinateComponent.Coordinate)
+		switch moveToCoordinateComponent.State {
+		case world.MoveToCoordinateComponentStateDisabled:
+			continue
+		case world.MoveToCoordinateComponentStateMoving:
+			destination := moveToCoordinateComponent.Coordinate.WorldCoordinate()
 
-		destinationX := moveToCoordinateComponent.Coordinate.WorldCoordinate().WorldX
-		destinationY := moveToCoordinateComponent.Coordinate.WorldCoordinate().WorldY
+			xDistance := destination.WorldX - coordinate.WorldX
+			yDistance := destination.WorldY - coordinate.WorldY
 
-		xDistance := destinationX - position.WorldX
-		yDistance := destinationY - position.WorldY
-		log.Println(xDistance, yDistance)
+			if xDistance == 0 && yDistance == 0 {
+				moveToCoordinateComponent.State = world.MoveToCoordinateComponentStateArrived
+				continue
+			}
 
-		if xDistance == 0 && yDistance == 0 {
+			absXDistance := math.Abs(xDistance)
+			absYDistance := math.Abs(yDistance)
+
+			var distanceToVelocityMultiplier float64
+			if absXDistance > absYDistance {
+				distanceToVelocityMultiplier = moveSpeedComponent.Speed / absXDistance
+			} else {
+				distanceToVelocityMultiplier = moveSpeedComponent.Speed / absYDistance
+			}
+
+			absXVelocity := absXDistance * distanceToVelocityMultiplier
+			absYVelocity := absYDistance * distanceToVelocityMultiplier
+
+			xVelocity := absXVelocity
+			if xDistance < 0 {
+				xVelocity *= -1
+			}
+			yVelocity := absYVelocity
+			if yDistance < 0 {
+				yVelocity *= -1
+			}
+
+			velocity.VelocityX += xVelocity
+			velocity.VelocityY += yVelocity
+		case world.MoveToCoordinateComponentStateArrived:
 			continue
 		}
-
-		absXDistance := math.Abs(xDistance)
-		absYDistance := math.Abs(yDistance)
-
-		var distanceToVelocityMultiplier float64
-		if absXDistance > absYDistance {
-			distanceToVelocityMultiplier = moveToCoordinateComponent.Speed / absXDistance
-		} else {
-			distanceToVelocityMultiplier = moveToCoordinateComponent.Speed / absYDistance
-		}
-
-		absXVelocity := absXDistance * distanceToVelocityMultiplier
-		absYVelocity := absYDistance * distanceToVelocityMultiplier
-
-		xVelocity := floatSign(xDistance) * absXVelocity
-		yVelocity := floatSign(yDistance) * absYVelocity
-
-		velocity.VelocityX += xVelocity
-		velocity.VelocityY += yVelocity
 	}
 	return errors.Join(errs...)
 }
@@ -90,31 +87,35 @@ func moveToCoordinates(w *world.World) error {
 		}
 		moveToCoordinatesComponent := &entity.MoveToCoordinatesComponent.Data
 
-		if !entity.Coordinate.Present {
-			errs = append(errs, newRequireComponentError(entity, "position"))
-			continue
-		}
-		position := entity.Coordinate.Data.WorldCoordinate()
-
 		if !entity.MoveToCoordinateComponent.Present {
 			errs = append(errs, newRequireComponentError(entity, "move to coordinate"))
 			continue
 		}
 		moveToCoordinateComponent := &entity.MoveToCoordinateComponent.Data
 
-		if len(moveToCoordinatesComponent.Coordinates) == 0 {
-			moveToCoordinateComponent.Coordinate = nil
-			continue
-		}
+		switch moveToCoordinatesComponent.State {
+		case world.MoveToCoordinatesComponentStateDisabled:
+			moveToCoordinateComponent.Disable()
+		case world.MoveToCoordinatesComponentStateIdle:
+			moveToCoordinateComponent.SetCoordinate(moveToCoordinatesComponent.Coordinates[0])
+			moveToCoordinatesComponent.State = world.MoveToCoordinatesComponentStateMoving
+		case world.MoveToCoordinatesComponentStateMoving:
+			if moveToCoordinateComponent.State != world.MoveToCoordinateComponentStateArrived {
+				continue
+			}
 
-		currentCoordinate := moveToCoordinatesComponent.Coordinates[moveToCoordinatesComponent.CurrentCoordinate]
+			if moveToCoordinatesComponent.CurrentCoordinate+1 > len(moveToCoordinatesComponent.Coordinates)-1 {
+				moveToCoordinateComponent.Disable()
+				moveToCoordinatesComponent.State = world.MoveToCoordinatesComponentStateFinished
+				continue
+			}
 
-		if currentCoordinate.WorldCoordinate() == position && moveToCoordinatesComponent.CurrentCoordinate+1 < len(moveToCoordinatesComponent.Coordinates) {
 			moveToCoordinatesComponent.CurrentCoordinate++
-			currentCoordinate = moveToCoordinatesComponent.Coordinates[moveToCoordinatesComponent.CurrentCoordinate]
+			currentCoordinate := moveToCoordinatesComponent.Coordinates[moveToCoordinatesComponent.CurrentCoordinate]
+			moveToCoordinateComponent.SetCoordinate(currentCoordinate)
+		case world.MoveToCoordinatesComponentStateFinished:
+			moveToCoordinateComponent.Disable()
 		}
-
-		moveToCoordinateComponent.Coordinate = currentCoordinate
 	}
 	return errors.Join(errs...)
 }
@@ -148,22 +149,22 @@ func initialiseBlockedPathfindingTiles(w *world.World) {
 	}
 }
 
-func tilePositionNeighbours(w *world.World, position world.TilePosition) []astar.Neighbour[world.TilePosition] {
+func tilePositionNeighbours(w *world.World, tilePosition world.TilePosition) []astar.Neighbour[world.TilePosition] {
 	var result []astar.Neighbour[world.TilePosition]
-	for _, offset := range [...]struct{ x, y int }{{0, 1}, {0, -1}, {1, 0}, {-1, 0}} {
-		neighbourTile := world.TilePosition{
-			Level: position.Level,
+	for _, neighbourOffset := range [...]struct{ x, y int }{{0, 1}, {0, -1}, {1, 0}, {-1, 0}} {
+		neighbourTilePosition := world.TilePosition{
+			Level: tilePosition.Level,
 			TileCoordinate: world.TileCoordinate{
-				TileX: position.TileCoordinate.TileX + offset.x,
-				TileY: position.TileCoordinate.TileY + offset.y,
+				TileX: tilePosition.TileCoordinate.TileX + neighbourOffset.x,
+				TileY: tilePosition.TileCoordinate.TileY + neighbourOffset.y,
 			},
 		}
-		if _, isBlocked := w.BlockedPathfindingTiles[neighbourTile]; isBlocked {
+		if _, isBlocked := w.BlockedPathfindingTiles[neighbourTilePosition]; isBlocked {
 			continue
 		}
 		result = append(result, astar.Neighbour[world.TilePosition]{
-			Node: neighbourTile,
-			Cost: 1,
+			Node: neighbourTilePosition,
+			Cost: 10,
 		})
 	}
 	return result
@@ -175,7 +176,7 @@ func tilePositionEstimateCost(from world.TilePosition, to world.TilePosition) as
 	return astar.Cost(math.Sqrt(math.Pow(xDiff, 2)+math.Pow(yDiff, 2)) * 10)
 }
 
-func tilePositionPathToCoordinatesPath(path astar.Path[world.TilePosition]) astar.Path[world.Coordinate] {
+func tilePositionPathToCoordinatePath(path astar.Path[world.TilePosition]) astar.Path[world.Coordinate] {
 	result := make(astar.Path[world.Coordinate], len(path))
 	for i := range path {
 		result[i] = path[i].TileCoordinate
@@ -184,23 +185,43 @@ func tilePositionPathToCoordinatesPath(path astar.Path[world.TilePosition]) asta
 }
 
 func findShortestPath(w *world.World, from world.TilePosition, to world.TilePosition) astar.Path[world.Coordinate] {
-	return tilePositionPathToCoordinatesPath(astar.FindPath(astar.Options[world.TilePosition]{
+	path := astar.FindPath(astar.Options[world.TilePosition]{
 		Start: from,
 		End:   to,
 		NeighboursFunc: func(position world.TilePosition) []astar.Neighbour[world.TilePosition] {
 			return tilePositionNeighbours(w, position)
 		},
 		EstimateCostFunc: tilePositionEstimateCost,
-	}))
-}
+	})
 
-func findShortestPathToPortal(w *world.World, from world.TilePosition) (shortestPath astar.Path[world.Coordinate], portal *world.Entity) {
-	type path struct {
-		path   astar.Path[world.Coordinate]
-		portal *world.Entity
+	if path == nil {
+		return nil
 	}
 
-	var paths []path
+	return tilePositionPathToCoordinatePath(path)
+}
+
+func getShortestPath(paths []astar.Path[world.Coordinate]) astar.Path[world.Coordinate] {
+	if len(paths) == 0 {
+		return nil
+	}
+
+	var shortestPath astar.Path[world.Coordinate]
+	for i, path := range paths {
+		if i == 0 {
+			shortestPath = path
+			continue
+		}
+
+		if len(path) < len(shortestPath) {
+			shortestPath = path
+		}
+	}
+	return shortestPath
+}
+
+func findShortestPathToPortal(w *world.World, from world.TilePosition) astar.Path[world.Coordinate] {
+	var paths []astar.Path[world.Coordinate]
 
 	for portal := range w.Entities {
 		if !portal.PortalComponent.Present {
@@ -214,40 +235,28 @@ func findShortestPathToPortal(w *world.World, from world.TilePosition) (shortest
 		if !portal.Coordinate.Present {
 			continue
 		}
-		portalPosition := portal.Coordinate.Data.WorldCoordinate()
+		portalCoordinate := portal.Coordinate.Data.WorldCoordinate()
 
 		pathToPortal := findShortestPath(
 			w,
 			from,
 			world.TilePosition{
 				Level:          portal.Level,
-				TileCoordinate: world.TileCoordinateFromCoordinate(portalPosition),
+				TileCoordinate: world.TileCoordinateFromCoordinate(portalCoordinate),
 			},
 		)
 		if pathToPortal == nil {
 			continue
 		}
 
-		paths = append(paths, path{
-			path:   pathToPortal,
-			portal: portal,
-		})
+		paths = append(paths, pathToPortal)
 	}
 
-	sort.Slice(paths, func(i, j int) bool {
-		return len(paths[i].path) < len(paths[j].path)
-	})
-
-	return paths[0].path, paths[0].portal
+	return getShortestPath(paths)
 }
 
-func findShortestPathFromPortal(w *world.World, to world.TilePosition) (shortestPath astar.Path[world.Coordinate], portal *world.Entity) {
-	type path struct {
-		path   astar.Path[world.Coordinate]
-		portal *world.Entity
-	}
-
-	var paths []path
+func findShortestPathFromPortal(w *world.World, to world.TilePosition) astar.Path[world.Coordinate] {
+	var paths []astar.Path[world.Coordinate]
 
 	for portal := range w.Entities {
 		if !portal.PortalComponent.Present {
@@ -261,13 +270,13 @@ func findShortestPathFromPortal(w *world.World, to world.TilePosition) (shortest
 		if !portal.Coordinate.Present {
 			continue
 		}
-		position := portal.Coordinate.Data.WorldCoordinate()
+		portalCoordinate := portal.Coordinate.Data.WorldCoordinate()
 
 		pathFromPortal := findShortestPath(
 			w,
 			world.TilePosition{
 				Level:          portal.Level,
-				TileCoordinate: world.TileCoordinateFromCoordinate(position),
+				TileCoordinate: world.TileCoordinateFromCoordinate(portalCoordinate),
 			},
 			to,
 		)
@@ -275,17 +284,10 @@ func findShortestPathFromPortal(w *world.World, to world.TilePosition) (shortest
 			continue
 		}
 
-		paths = append(paths, path{
-			path:   pathFromPortal,
-			portal: portal,
-		})
+		paths = append(paths, pathFromPortal)
 	}
 
-	sort.Slice(paths, func(i, j int) bool {
-		return len(paths[i].path) < len(paths[j].path)
-	})
-
-	return paths[0].path, paths[0].portal
+	return getShortestPath(paths)
 }
 
 func pathfind(w *world.World) error {
@@ -296,70 +298,72 @@ func pathfind(w *world.World) error {
 		}
 		pathfinderComponent := &entity.PathfinderComponent.Data
 
+		if !entity.Coordinate.Present {
+			errs = append(errs, newRequireComponentError(entity, "coordinate"))
+			continue
+		}
+		coordinate := &entity.Coordinate.Data
+
+		position := world.Position{
+			Level:      entity.Level,
+			Coordinate: (*coordinate).WorldCoordinate(),
+		}
+
 		if !entity.MoveToCoordinatesComponent.Present {
 			errs = append(errs, newRequireComponentError(entity, "move to coodinates"))
 			continue
 		}
 		moveToCoodinatesComponent := &entity.MoveToCoordinatesComponent.Data
 
-		if !entity.Coordinate.Present {
-			errs = append(errs, newRequireComponentError(entity, "position"))
-			continue
-		}
-		position := &entity.Coordinate.Data
-
-		if !pathfinderComponent.Destination.Present {
-			moveToCoodinatesComponent.SetCoordinates(nil)
-			continue
-		}
-		destination := pathfinderComponent.Destination.Data
-
 		switch pathfinderComponent.State {
-		case world.PathfinderComponentStateNotStarted:
-			if entity.Level == destination.Level {
+		case world.PathfinderComponentStateDisabled, world.PathfinderComponentStateNoPath, world.PathfinderComponentStateArrived:
+			moveToCoodinatesComponent.Disable()
+		case world.PathfinderComponentStateIdle:
+			if entity.Level == pathfinderComponent.Destination.Level {
 				path := findShortestPath(
 					w,
-					world.TilePosition{
-						Level:          entity.Level,
-						TileCoordinate: world.TileCoordinateFromCoordinate((*position).WorldCoordinate()),
-					},
-					world.TilePosition{
-						Level:          destination.Level,
-						TileCoordinate: world.TileCoordinateFromCoordinate(destination.Coordinate.WorldCoordinate()),
-					},
+					world.TilePositionFromPosition(position),
+					world.TilePositionFromPosition(pathfinderComponent.Destination),
 				)
-
 				moveToCoodinatesComponent.SetCoordinates(path)
-				pathfinderComponent.State = world.PathfinderComponentStateToDestination
+				pathfinderComponent.State = world.PathfinderComponentStateMovingToDestination
 				continue
 			}
 
-			path, portal := findShortestPathToPortal(w, world.TilePosition{
-				Level:          entity.Level,
-				TileCoordinate: world.TileCoordinateFromCoordinate((*position).WorldCoordinate()),
-			})
-			moveToCoodinatesComponent.SetCoordinates(path)
-			pathfinderComponent.State = world.PathfinderComponentStateToPortal
-			pathfinderComponent.Portal = portal
+			pathToPortal := findShortestPathToPortal(w, world.TilePositionFromPosition(position))
+			if pathToPortal == nil {
+				moveToCoodinatesComponent.Disable()
+				pathfinderComponent.State = world.PathfinderComponentStateNoPath
+				continue
+			}
+
+			moveToCoodinatesComponent.SetCoordinates(pathToPortal)
+			pathfinderComponent.State = world.PathfinderComponentStateMovingToPortal
 			continue
-		case world.PathfinderComponentStateToPortal:
-			if !isCollision(entity, pathfinderComponent.Portal, true) {
+		case world.PathfinderComponentStateMovingToPortal:
+			if moveToCoodinatesComponent.State != world.MoveToCoordinatesComponentStateFinished {
 				continue
 			}
 
-			path, portal := findShortestPathFromPortal(w, world.TilePosition{
-				Level:          destination.Level,
-				TileCoordinate: world.TileCoordinateFromCoordinate(destination.Coordinate.WorldCoordinate()),
-			})
-			*position = portal.Coordinate.Data
-			pathfinderComponent.State = world.PathfinderComponentStateToDestination
-			moveToCoodinatesComponent.SetCoordinates(path)
-		case world.PathfinderComponentStateToDestination:
-			if (*position).WorldCoordinate() != destination.Coordinate.WorldCoordinate() {
+			pathFromPortal := findShortestPathFromPortal(w, world.TilePositionFromPosition(pathfinderComponent.Destination))
+			if pathFromPortal == nil {
+				pathfinderComponent.State = world.PathfinderComponentStateNoPath
+				moveToCoodinatesComponent.Disable()
 				continue
 			}
 
-			pathfinderComponent.State = world.PathfinderComponentStateFinished
+			entity.Level = pathfinderComponent.Destination.Level
+			*coordinate = pathFromPortal[0]
+
+			moveToCoodinatesComponent.SetCoordinates(pathFromPortal)
+			pathfinderComponent.State = world.PathfinderComponentStateMovingToDestination
+		case world.PathfinderComponentStateMovingToDestination:
+			if moveToCoodinatesComponent.State != world.MoveToCoordinatesComponentStateFinished {
+				continue
+			}
+
+			moveToCoodinatesComponent.Disable()
+			pathfinderComponent.State = world.PathfinderComponentStateArrived
 		}
 	}
 	return errors.Join(errs...)

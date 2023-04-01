@@ -4,14 +4,21 @@ const TileSize = 32
 
 type Level int
 
+type Position struct {
+	Level      Level
+	Coordinate Coordinate
+}
+
 type TilePosition struct {
 	Level          Level
 	TileCoordinate TileCoordinate
 }
 
-type Position struct {
-	Level      Level
-	Coordinate Coordinate
+func TilePositionFromPosition(position Position) TilePosition {
+	return TilePosition{
+		Level:          position.Level,
+		TileCoordinate: TileCoordinateFromCoordinate(position.Coordinate),
+	}
 }
 
 type Coordinate interface {

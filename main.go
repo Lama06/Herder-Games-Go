@@ -96,7 +96,7 @@ func addBoden(w *world.World, level world.Level) {
 			}
 			w.Entities[boden] = struct{}{}
 
-			if rand.Float64() <= 0.2 {
+			if rand.Float64() <= 0.05 {
 				box := &world.Entity{
 					Level: level,
 					Coordinate: option.Some[world.Coordinate](world.TileCoordinate{
@@ -170,22 +170,23 @@ func main() {
 		}),
 		VelocityComponent: option.Some(world.VelocityComponent{}),
 		//KeyboardControllerComponent:  option.Some(world.KeyboardControllerComponent{Speed: 2}),
-		MoveToCoordinateComponent: option.Some(world.MoveToCoordinateComponent{
+		MoveSpeedComponent: option.Some(world.MoveSpeedComponent{
 			Speed: 1,
 		}),
-		MoveToCoordinatesComponent: option.Some(world.MoveToCoordinatesComponent{}),
-		PathfinderComponent: option.Some(world.PathfinderComponent{
-			Destination: option.Some(world.Position{
-				Level: 0,
-				Coordinate: world.TileCoordinate{
-					TileX: 25,
-					TileY: 25,
-				},
-			}),
-		}),
+		MoveToCoordinateComponent:    option.Some(world.MoveToCoordinateComponent{}),
+		MoveToCoordinatesComponent:   option.Some(world.MoveToCoordinatesComponent{}),
+		PathfinderComponent:          option.Some(world.PathfinderComponent{}),
 		RectColliderComponent:        option.Some(world.RectColliderComponent{}),
 		ImageBoundsColliderComponent: option.Some(world.ImageBoundsColliderComponent{}),
 	}
+
+	player.PathfinderComponent.Data.SetDestination(world.Position{
+		Level: 1,
+		Coordinate: world.TileCoordinate{
+			TileX: 25,
+			TileY: 25,
+		},
+	})
 
 	world := &world.World{
 		Player: player,
