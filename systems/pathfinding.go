@@ -2,13 +2,22 @@ package systems
 
 import (
 	"errors"
+	"log"
 	"math"
 
 	"github.com/Lama06/Herder-Games/astar"
+	"github.com/Lama06/Herder-Games/option"
 	"github.com/Lama06/Herder-Games/world"
 )
 
+func compareFloatsWithTolerance(a, b, tolerance float64) bool {
+	diff := math.Abs(a - b)
+	return diff <= tolerance
+}
+
 func moveToCoordinate(w *world.World) error {
+	const tolerance = 0.001
+
 	var errs []error
 	for entity := range w.Entities {
 		if !entity.MoveToCoordinateComponent.Present {
@@ -20,7 +29,8 @@ func moveToCoordinate(w *world.World) error {
 			errs = append(errs, newRequireComponentError(entity, "coordinate"))
 			continue
 		}
-		coordinate := entity.Coordinate.Data.WorldCoordinate()
+		coordinate := &entity.Coordinate.Data
+		currentCoordiante := (*coordinate).WorldCoordinate()
 
 		if !entity.VelocityComponent.Present {
 			errs = append(errs, newRequireComponentError(entity, "velocity"))
@@ -34,47 +44,55 @@ func moveToCoordinate(w *world.World) error {
 		}
 		moveSpeedComponent := entity.MoveSpeedComponent.Data
 
-		switch moveToCoordinateComponent.State {
-		case world.MoveToCoordinateComponentStateDisabled:
-			continue
-		case world.MoveToCoordinateComponentStateMoving:
-			destination := moveToCoordinateComponent.Coordinate.WorldCoordinate()
-
-			xDistance := destination.WorldX - coordinate.WorldX
-			yDistance := destination.WorldY - coordinate.WorldY
-
-			if xDistance == 0 && yDistance == 0 {
-				moveToCoordinateComponent.State = world.MoveToCoordinateComponentStateArrived
-				continue
-			}
-
-			absXDistance := math.Abs(xDistance)
-			absYDistance := math.Abs(yDistance)
-
-			var distanceToVelocityMultiplier float64
-			if absXDistance > absYDistance {
-				distanceToVelocityMultiplier = moveSpeedComponent.Speed / absXDistance
-			} else {
-				distanceToVelocityMultiplier = moveSpeedComponent.Speed / absYDistance
-			}
-
-			absXVelocity := absXDistance * distanceToVelocityMultiplier
-			absYVelocity := absYDistance * distanceToVelocityMultiplier
-
-			xVelocity := absXVelocity
-			if xDistance < 0 {
-				xVelocity *= -1
-			}
-			yVelocity := absYVelocity
-			if yDistance < 0 {
-				yVelocity *= -1
-			}
-
-			velocity.VelocityX += xVelocity
-			velocity.VelocityY += yVelocity
-		case world.MoveToCoordinateComponentStateArrived:
+		if moveToCoordinateComponent.Arrived {
 			continue
 		}
+
+		destination := moveToCoordinateComponent.Coordinate.WorldCoordinate()
+
+		xDistance := destination.WorldX - currentCoordiante.WorldX
+		yDistance := destination.WorldY - currentCoordiante.WorldY
+
+		if compareFloatsWithTolerance(xDistance, 0, tolerance) && compareFloatsWithTolerance(yDistance, 0, tolerance) {
+			*coordinate = destination
+			moveToCoordinateComponent.Arrived = true
+			continue
+		}
+
+		var xVelocity, yVelocity float64
+		if math.Abs(xDistance) > math.Abs(yDistance) {
+			xSpeed := moveSpeedComponent.Speed
+			if xSpeed > math.Abs(xDistance) {
+				xSpeed = math.Abs(xDistance)
+			}
+
+			if xDistance > 0 {
+				xVelocity = xSpeed
+			} else {
+				xVelocity = -xSpeed
+			}
+
+			xDistancePercentage := xDistance / xVelocity
+			yVelocity = yDistance * xDistancePercentage
+		} else {
+			ySpeed := moveSpeedComponent.Speed
+			if ySpeed > math.Abs(yDistance) {
+				ySpeed = math.Abs(yDistance)
+			}
+
+			if yDistance > 0 {
+				yVelocity = ySpeed
+			} else {
+				yVelocity = -ySpeed
+			}
+
+			yDistancePercentage := yDistance / yVelocity
+			xVelocity = xDistance * yDistancePercentage
+		}
+
+		velocity.VelocityX += xVelocity
+		velocity.VelocityY += yVelocity
+
 	}
 	return errors.Join(errs...)
 }
@@ -87,34 +105,27 @@ func moveToCoordinates(w *world.World) error {
 		}
 		moveToCoordinatesComponent := &entity.MoveToCoordinatesComponent.Data
 
-		if !entity.MoveToCoordinateComponent.Present {
-			errs = append(errs, newRequireComponentError(entity, "move to coordinate"))
-			continue
-		}
-		moveToCoordinateComponent := &entity.MoveToCoordinateComponent.Data
-
 		switch moveToCoordinatesComponent.State {
-		case world.MoveToCoordinatesComponentStateDisabled:
-			moveToCoordinateComponent.Disable()
 		case world.MoveToCoordinatesComponentStateIdle:
-			moveToCoordinateComponent.SetCoordinate(moveToCoordinatesComponent.Coordinates[0])
+			entity.MoveToCoordinateComponent = option.Some(world.NewMoveToCoordinateComponent(moveToCoordinatesComponent.Coordinates[0]))
 			moveToCoordinatesComponent.State = world.MoveToCoordinatesComponentStateMoving
 		case world.MoveToCoordinatesComponentStateMoving:
-			if moveToCoordinateComponent.State != world.MoveToCoordinateComponentStateArrived {
+			moveToCoordinateComponent := entity.MoveToCoordinateComponent.Data
+
+			if !moveToCoordinateComponent.Arrived {
 				continue
 			}
 
 			if moveToCoordinatesComponent.CurrentCoordinate+1 > len(moveToCoordinatesComponent.Coordinates)-1 {
-				moveToCoordinateComponent.Disable()
+				entity.MoveToCoordinateComponent = option.None[world.MoveToCoordinateComponent]()
 				moveToCoordinatesComponent.State = world.MoveToCoordinatesComponentStateFinished
 				continue
 			}
 
 			moveToCoordinatesComponent.CurrentCoordinate++
 			currentCoordinate := moveToCoordinatesComponent.Coordinates[moveToCoordinatesComponent.CurrentCoordinate]
-			moveToCoordinateComponent.SetCoordinate(currentCoordinate)
+			entity.MoveToCoordinateComponent = option.Some(world.NewMoveToCoordinateComponent(currentCoordinate))
 		case world.MoveToCoordinatesComponentStateFinished:
-			moveToCoordinateComponent.Disable()
 		}
 	}
 	return errors.Join(errs...)
@@ -309,15 +320,9 @@ func pathfind(w *world.World) error {
 			Coordinate: (*coordinate).WorldCoordinate(),
 		}
 
-		if !entity.MoveToCoordinatesComponent.Present {
-			errs = append(errs, newRequireComponentError(entity, "move to coodinates"))
-			continue
-		}
-		moveToCoodinatesComponent := &entity.MoveToCoordinatesComponent.Data
-
 		switch pathfinderComponent.State {
-		case world.PathfinderComponentStateDisabled, world.PathfinderComponentStateNoPath, world.PathfinderComponentStateArrived:
-			moveToCoodinatesComponent.Disable()
+		case world.PathfinderComponentStateNoPath, world.PathfinderComponentStateArrived:
+			continue
 		case world.PathfinderComponentStateIdle:
 			if entity.Level == pathfinderComponent.Destination.Level {
 				path := findShortestPath(
@@ -325,44 +330,52 @@ func pathfind(w *world.World) error {
 					world.TilePositionFromPosition(position),
 					world.TilePositionFromPosition(pathfinderComponent.Destination),
 				)
-				moveToCoodinatesComponent.SetCoordinates(path)
+				if path == nil {
+					entity.MoveToCoordinatesComponent = option.None[world.MoveToCoordinatesComponent]()
+					pathfinderComponent.State = world.PathfinderComponentStateNoPath
+					continue
+				}
+				entity.MoveToCoordinatesComponent = option.Some(world.NewMoveToCoordinatesComponent(path))
 				pathfinderComponent.State = world.PathfinderComponentStateMovingToDestination
 				continue
 			}
 
 			pathToPortal := findShortestPathToPortal(w, world.TilePositionFromPosition(position))
 			if pathToPortal == nil {
-				moveToCoodinatesComponent.Disable()
+				entity.MoveToCoordinatesComponent = option.None[world.MoveToCoordinatesComponent]()
 				pathfinderComponent.State = world.PathfinderComponentStateNoPath
 				continue
 			}
 
-			moveToCoodinatesComponent.SetCoordinates(pathToPortal)
+			entity.MoveToCoordinatesComponent = option.Some(world.NewMoveToCoordinatesComponent(pathToPortal))
 			pathfinderComponent.State = world.PathfinderComponentStateMovingToPortal
 			continue
 		case world.PathfinderComponentStateMovingToPortal:
-			if moveToCoodinatesComponent.State != world.MoveToCoordinatesComponentStateFinished {
+			moveToCoordinatesComponent := entity.MoveToCoordinatesComponent.Data
+			if moveToCoordinatesComponent.State != world.MoveToCoordinatesComponentStateFinished {
 				continue
 			}
 
 			pathFromPortal := findShortestPathFromPortal(w, world.TilePositionFromPosition(pathfinderComponent.Destination))
 			if pathFromPortal == nil {
+				entity.MoveToCoordinatesComponent = option.None[world.MoveToCoordinatesComponent]()
 				pathfinderComponent.State = world.PathfinderComponentStateNoPath
-				moveToCoodinatesComponent.Disable()
 				continue
 			}
+			log.Println("From portal", pathFromPortal)
 
 			entity.Level = pathfinderComponent.Destination.Level
 			*coordinate = pathFromPortal[0]
 
-			moveToCoodinatesComponent.SetCoordinates(pathFromPortal)
+			entity.MoveToCoordinatesComponent = option.Some(world.NewMoveToCoordinatesComponent(pathFromPortal))
 			pathfinderComponent.State = world.PathfinderComponentStateMovingToDestination
 		case world.PathfinderComponentStateMovingToDestination:
-			if moveToCoodinatesComponent.State != world.MoveToCoordinatesComponentStateFinished {
+			moveToCoordinatesComponent := entity.MoveToCoordinatesComponent.Data
+			if moveToCoordinatesComponent.State != world.MoveToCoordinatesComponentStateFinished {
 				continue
 			}
 
-			moveToCoodinatesComponent.Disable()
+			entity.MoveToCoordinatesComponent = option.None[world.MoveToCoordinatesComponent]()
 			pathfinderComponent.State = world.PathfinderComponentStateArrived
 		}
 	}

@@ -32,38 +32,26 @@ type MoveSpeedComponent struct {
 	Speed float64
 }
 
-type MoveToCoordinateComponentState byte
-
-const (
-	MoveToCoordinateComponentStateDisabled MoveToCoordinateComponentState = iota
-	MoveToCoordinateComponentStateMoving
-	MoveToCoordinateComponentStateArrived
-)
-
 type MoveToCoordinateComponent struct {
-	State      MoveToCoordinateComponentState
 	Coordinate Coordinate
+	Arrived    bool
 }
 
-func (m *MoveToCoordinateComponent) Disable() {
-	m.State = MoveToCoordinateComponentStateDisabled
-	m.Coordinate = nil
-}
-
-func (m *MoveToCoordinateComponent) SetCoordinate(coordiante Coordinate) {
+func NewMoveToCoordinateComponent(coordiante Coordinate) MoveToCoordinateComponent {
 	if coordiante == nil {
 		panic("cannot move to nil coordinate")
 	}
 
-	m.State = MoveToCoordinateComponentStateMoving
-	m.Coordinate = coordiante
+	return MoveToCoordinateComponent{
+		Coordinate: coordiante,
+		Arrived:    false,
+	}
 }
 
 type MoveToCoordinatesComponentState byte
 
 const (
-	MoveToCoordinatesComponentStateDisabled MoveToCoordinatesComponentState = iota
-	MoveToCoordinatesComponentStateIdle
+	MoveToCoordinatesComponentStateIdle MoveToCoordinatesComponentState = iota
 	MoveToCoordinatesComponentStateMoving
 	MoveToCoordinatesComponentStateFinished
 )
@@ -74,30 +62,25 @@ type MoveToCoordinatesComponent struct {
 	CurrentCoordinate int
 }
 
-func (m *MoveToCoordinatesComponent) Disable() {
-	m.State = MoveToCoordinatesComponentStateDisabled
-	m.Coordinates = nil
-	m.CurrentCoordinate = 0
-}
-
-func (m *MoveToCoordinatesComponent) SetCoordinates(coordiantes []Coordinate) {
-	if len(coordiantes) == 0 {
-		panic("cannot move to no coordinates")
+func NewMoveToCoordinatesComponent(coordinates []Coordinate) MoveToCoordinatesComponent {
+	if len(coordinates) == 0 {
+		panic("coordinates are empty")
 	}
 
-	m.State = MoveToCoordinatesComponentStateIdle
-	m.Coordinates = coordiantes
-	m.CurrentCoordinate = 0
+	return MoveToCoordinatesComponent{
+		State:             MoveToCoordinatesComponentStateIdle,
+		Coordinates:       coordinates,
+		CurrentCoordinate: 0,
+	}
 }
 
 type PathfinderComponentState byte
 
 const (
-	PathfinderComponentStateDisabled PathfinderComponentState = iota
-	PathfinderComponentStateIdle
-	PathfinderComponentStateNoPath
+	PathfinderComponentStateIdle PathfinderComponentState = iota
 	PathfinderComponentStateMovingToPortal
 	PathfinderComponentStateMovingToDestination
+	PathfinderComponentStateNoPath
 	PathfinderComponentStateArrived
 )
 
@@ -106,14 +89,11 @@ type PathfinderComponent struct {
 	Destination Position
 }
 
-func (p *PathfinderComponent) Disable() {
-	p.State = PathfinderComponentStateDisabled
-	p.Destination = Position{}
-}
-
-func (p *PathfinderComponent) SetDestination(destination Position) {
-	p.State = PathfinderComponentStateIdle
-	p.Destination = destination
+func NewPathfinderComponent(destination Position) PathfinderComponent {
+	return PathfinderComponent{
+		State:       PathfinderComponentStateIdle,
+		Destination: destination,
+	}
 }
 
 type RectColliderComponent struct {

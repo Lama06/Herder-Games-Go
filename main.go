@@ -10,6 +10,7 @@ import (
 	"github.com/Lama06/Herder-Games/systems"
 	"github.com/Lama06/Herder-Games/world"
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"golang.org/x/image/colornames"
 )
 
@@ -25,6 +26,18 @@ func (g *Game) Update() error {
 
 	if !g.start {
 		return nil
+	}
+
+	if inpututil.IsKeyJustPressed(ebiten.KeyR) {
+		tileX, tileY := int(rand.Float64()*20)+5, int(rand.Float64()*20)+5
+		log.Println("Pathfinding to", tileX, tileY)
+		g.world.Player.PathfinderComponent = option.Some(world.NewPathfinderComponent(world.Position{
+			Level: 1,
+			Coordinate: world.TileCoordinate{
+				TileX: tileX,
+				TileY: tileY,
+			},
+		}))
 	}
 
 	err := systems.Update(g.world)
@@ -96,7 +109,7 @@ func addBoden(w *world.World, level world.Level) {
 			}
 			w.Entities[boden] = struct{}{}
 
-			if rand.Float64() <= 0.05 {
+			if rand.Float64() <= 0.0 {
 				box := &world.Entity{
 					Level: level,
 					Coordinate: option.Some[world.Coordinate](world.TileCoordinate{
@@ -171,22 +184,11 @@ func main() {
 		VelocityComponent: option.Some(world.VelocityComponent{}),
 		//KeyboardControllerComponent:  option.Some(world.KeyboardControllerComponent{Speed: 2}),
 		MoveSpeedComponent: option.Some(world.MoveSpeedComponent{
-			Speed: 1,
+			Speed: 1.9,
 		}),
-		MoveToCoordinateComponent:    option.Some(world.MoveToCoordinateComponent{}),
-		MoveToCoordinatesComponent:   option.Some(world.MoveToCoordinatesComponent{}),
-		PathfinderComponent:          option.Some(world.PathfinderComponent{}),
 		RectColliderComponent:        option.Some(world.RectColliderComponent{}),
 		ImageBoundsColliderComponent: option.Some(world.ImageBoundsColliderComponent{}),
 	}
-
-	player.PathfinderComponent.Data.SetDestination(world.Position{
-		Level: 1,
-		Coordinate: world.TileCoordinate{
-			TileX: 25,
-			TileY: 25,
-		},
-	})
 
 	world := &world.World{
 		Player: player,
