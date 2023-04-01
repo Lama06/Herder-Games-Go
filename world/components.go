@@ -24,9 +24,7 @@ type VelocityComponent struct {
 	VelocityX, VelocityY float64
 }
 
-type KeyboardControllerComponent struct {
-	Speed float64
-}
+type KeyboardControllerComponent struct{}
 
 type MoveSpeedComponent struct {
 	Speed float64
@@ -86,10 +84,10 @@ const (
 
 type PathfinderComponent struct {
 	State       PathfinderComponentState
-	Destination Position
+	Destination TilePosition
 }
 
-func NewPathfinderComponent(destination Position) PathfinderComponent {
+func NewPathfinderComponent(destination TilePosition) PathfinderComponent {
 	return PathfinderComponent{
 		State:       PathfinderComponentStateIdle,
 		Destination: destination,

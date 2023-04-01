@@ -2,7 +2,6 @@ package systems
 
 import (
 	"errors"
-	"log"
 	"math"
 
 	"github.com/Lama06/Herder-Games/astar"
@@ -61,10 +60,7 @@ func moveToCoordinate(w *world.World) error {
 
 		var xVelocity, yVelocity float64
 		if math.Abs(xDistance) > math.Abs(yDistance) {
-			xSpeed := moveSpeedComponent.Speed
-			if xSpeed > math.Abs(xDistance) {
-				xSpeed = math.Abs(xDistance)
-			}
+			xSpeed := math.Min(moveSpeedComponent.Speed, math.Abs(xDistance))
 
 			if xDistance > 0 {
 				xVelocity = xSpeed
@@ -72,13 +68,10 @@ func moveToCoordinate(w *world.World) error {
 				xVelocity = -xSpeed
 			}
 
-			xDistancePercentage := xDistance / xVelocity
+			xDistancePercentage := xVelocity / xDistance
 			yVelocity = yDistance * xDistancePercentage
 		} else {
-			ySpeed := moveSpeedComponent.Speed
-			if ySpeed > math.Abs(yDistance) {
-				ySpeed = math.Abs(yDistance)
-			}
+			ySpeed := math.Min(moveSpeedComponent.Speed, math.Abs(yDistance))
 
 			if yDistance > 0 {
 				yVelocity = ySpeed
@@ -86,7 +79,7 @@ func moveToCoordinate(w *world.World) error {
 				yVelocity = -ySpeed
 			}
 
-			yDistancePercentage := yDistance / yVelocity
+			yDistancePercentage := yVelocity / yDistance
 			xVelocity = xDistance * yDistancePercentage
 		}
 
@@ -328,7 +321,7 @@ func pathfind(w *world.World) error {
 				path := findShortestPath(
 					w,
 					world.TilePositionFromPosition(position),
-					world.TilePositionFromPosition(pathfinderComponent.Destination),
+					pathfinderComponent.Destination,
 				)
 				if path == nil {
 					entity.MoveToCoordinatesComponent = option.None[world.MoveToCoordinatesComponent]()
@@ -356,13 +349,12 @@ func pathfind(w *world.World) error {
 				continue
 			}
 
-			pathFromPortal := findShortestPathFromPortal(w, world.TilePositionFromPosition(pathfinderComponent.Destination))
+			pathFromPortal := findShortestPathFromPortal(w, pathfinderComponent.Destination)
 			if pathFromPortal == nil {
 				entity.MoveToCoordinatesComponent = option.None[world.MoveToCoordinatesComponent]()
 				pathfinderComponent.State = world.PathfinderComponentStateNoPath
 				continue
 			}
-			log.Println("From portal", pathFromPortal)
 
 			entity.Level = pathfinderComponent.Destination.Level
 			*coordinate = pathFromPortal[0]

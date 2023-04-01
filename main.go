@@ -31,14 +31,16 @@ func (g *Game) Update() error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyR) {
 		tileX, tileY := int(rand.Float64()*20)+5, int(rand.Float64()*20)+5
 		log.Println("Pathfinding to", tileX, tileY)
-		g.world.Player.PathfinderComponent = option.Some(world.NewPathfinderComponent(world.Position{
-			Level: 1,
-			Coordinate: world.TileCoordinate{
+		g.world.Player.PathfinderComponent = option.Some(world.NewPathfinderComponent(world.TilePosition{
+			Level: 0,
+			TileCoordinate: world.TileCoordinate{
 				TileX: tileX,
 				TileY: tileY,
 			},
 		}))
 	}
+
+	//log.Println(g.world.Player.VelocityComponent.Data)
 
 	err := systems.Update(g.world)
 	if err != nil {
@@ -131,7 +133,7 @@ func addBoden(w *world.World, level world.Level) {
 				w.Entities[box] = struct{}{}
 			}
 
-			if rand.Float64() <= 0.01 {
+			if rand.Float64() <= 0.0 {
 				destinationLevel := world.Level(1)
 				if level == 1 {
 					destinationLevel = 0
@@ -169,9 +171,9 @@ func addBoden(w *world.World, level world.Level) {
 
 func main() {
 	player := &world.Entity{
-		Coordinate: option.Some[world.Coordinate](world.TileCoordinate{
-			TileX: 15,
-			TileY: 15,
+		Coordinate: option.Some[world.Coordinate](world.WorldCoordinate{
+			WorldX: world.TileSize*13 + 13,
+			WorldY: world.TileSize*13 + 13,
 		}),
 		ImageComponent: option.Some(world.ImageComponent{
 			Layer: PlayerLayer,
@@ -181,10 +183,10 @@ func main() {
 			Height: 20,
 			Color:  colornames.Red,
 		}),
-		VelocityComponent: option.Some(world.VelocityComponent{}),
-		//KeyboardControllerComponent:  option.Some(world.KeyboardControllerComponent{Speed: 2}),
+		VelocityComponent:           option.Some(world.VelocityComponent{}),
+		KeyboardControllerComponent: option.Some(world.KeyboardControllerComponent{}),
 		MoveSpeedComponent: option.Some(world.MoveSpeedComponent{
-			Speed: 1.9,
+			Speed: 1,
 		}),
 		RectColliderComponent:        option.Some(world.RectColliderComponent{}),
 		ImageBoundsColliderComponent: option.Some(world.ImageBoundsColliderComponent{}),
